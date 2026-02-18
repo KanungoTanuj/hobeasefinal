@@ -41,6 +41,7 @@ import {
   Trash2,
   Award,
   Video,
+  Bell,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
@@ -102,6 +103,7 @@ export default function TeacherDashboard() {
   const [activeClassId, setActiveClassId] = useState<string | null>(null)
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null)
   const [isVideoCallOpen, setIsVideoCallOpen] = useState(false)
+  const [unreadByBooking, setUnreadByBooking] = useState<{ [key: string]: number }>({})
   const router = useRouter()
   const isMobile = useIsMobile()
 
@@ -124,6 +126,24 @@ export default function TeacherDashboard() {
 
     checkAuth()
   }, [router])
+
+  useEffect(() => {
+    const fetchUnreadMessages = async () => {
+      try {
+        const response = await fetch("/api/messages/unread")
+        if (response.ok) {
+          const data = await response.json()
+          setUnreadByBooking(data.unreadByBooking || {})
+        }
+      } catch (error) {
+        console.error("[v0] Error fetching unread messages:", error)
+      }
+    }
+
+    fetchUnreadMessages()
+    const interval = setInterval(fetchUnreadMessages, 10000)
+    return () => clearInterval(interval)
+  }, [])
 
   const fetchTeacherData = async (email: string) => {
     try {
@@ -923,7 +943,15 @@ export default function TeacherDashboard() {
                               <Badge variant="outline" className="capitalize text-xs">
                                 {booking.status}
                               </Badge>
-                              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                              <div className="flex items-center gap-1">
+                                {unreadByBooking[booking.id] && unreadByBooking[booking.id] > 0 && (
+                                  <Badge className="bg-red-500 hover:bg-red-600 text-white text-xs px-2">
+                                    <Bell className="h-3 w-3 mr-1" />
+                                    {unreadByBooking[booking.id]}
+                                  </Badge>
+                                )}
+                                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                              </div>
                             </div>
                           </div>
                         ))}

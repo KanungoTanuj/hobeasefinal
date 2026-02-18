@@ -21,6 +21,7 @@ import {
   Settings,
   Star,
   Video,
+  Bell,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { ChatInterface } from "@/components/chat-interface"
@@ -88,6 +89,7 @@ export default function LearnerDashboard() {
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null)
   const [isVideoCallOpen, setIsVideoCallOpen] = useState(false)
   const [classStatuses, setClassStatuses] = useState<{ [key: string]: boolean }>({})
+  const [unreadByBooking, setUnreadByBooking] = useState<{ [key: string]: number }>({})
   const isMobile = useIsMobile()
 
   const checkAuth = async () => {
@@ -347,6 +349,24 @@ export default function LearnerDashboard() {
 
   useEffect(() => {
     checkAuth()
+  }, [])
+
+  useEffect(() => {
+    const fetchUnreadMessages = async () => {
+      try {
+        const response = await fetch("/api/messages/unread")
+        if (response.ok) {
+          const data = await response.json()
+          setUnreadByBooking(data.unreadByBooking || {})
+        }
+      } catch (error) {
+        console.error("[v0] Error fetching unread messages:", error)
+      }
+    }
+
+    fetchUnreadMessages()
+    const interval = setInterval(fetchUnreadMessages, 10000)
+    return () => clearInterval(interval)
   }, [])
 
   if (loading) {
@@ -675,10 +695,15 @@ export default function LearnerDashboard() {
                                       size="sm"
                                       variant="outline"
                                       onClick={() => setSelectedBookingForChat(booking)}
-                                      className="text-xs"
+                                      className="text-xs relative"
                                     >
                                       <MessageSquare className="h-3 w-3 mr-1" />
                                       Chat
+                                      {unreadByBooking[booking.id] && unreadByBooking[booking.id] > 0 && (
+                                        <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center bg-red-500 hover:bg-red-600 text-white text-xs">
+                                          {unreadByBooking[booking.id]}
+                                        </Badge>
+                                      )}
                                     </Button>
                                   )}
                                 </div>
@@ -738,10 +763,15 @@ export default function LearnerDashboard() {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => setSelectedBookingForChat(booking)}
-                                  className="text-xs mt-2 sm:mt-2"
+                                  className="text-xs mt-2 sm:mt-2 relative"
                                 >
                                   <MessageSquare className="h-3 w-3 mr-1" />
                                   Chat
+                                  {unreadByBooking[booking.id] && unreadByBooking[booking.id] > 0 && (
+                                    <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center bg-red-500 hover:bg-red-600 text-white text-xs">
+                                      {unreadByBooking[booking.id]}
+                                    </Badge>
+                                  )}
                                 </Button>
                               </div>
                             </div>

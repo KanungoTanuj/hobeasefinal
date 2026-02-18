@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Send, MessageSquare, AlertCircle, ChevronDown, Trash2 } from "lucide-react"
+import { Send, MessageSquare, AlertCircle, ChevronDown, Trash2, Check, CheckCheck } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
@@ -20,6 +20,8 @@ interface Message {
   sender_role: "learner" | "teacher"
   content: string
   created_at: string
+  is_read?: boolean
+  read_at?: string | null
 }
 
 interface Booking {
@@ -251,6 +253,26 @@ export function ChatInterface({
 
       console.log("[v0] Messages fetched successfully:", messagesData?.length || 0)
       setMessages(messagesData || [])
+
+      // Mark unread messages from other user as read
+      if (messagesData && messagesData.length > 0) {
+        const unreadMessages = messagesData.filter(
+          (m) => m.sender_auth_id !== currentUserId && !m.is_read,
+        )
+        if (unreadMessages.length > 0) {
+          console.log("[v0] Marking", unreadMessages.length, "messages as read")
+          const { error: updateError } = await supabase
+            .from("messages")
+            .update({ is_read: true, read_at: new Date().toISOString() })
+            .in(
+              "id",
+              unreadMessages.map((m) => m.id),
+            )
+          if (updateError) {
+            console.error("[v0] Error marking messages as read:", updateError)
+          }
+        }
+      }
     } catch (error) {
       console.error("[v0] Error fetching messages:", error)
       setError("Failed to load messages. Please check your connection.")
@@ -501,12 +523,21 @@ export function ChatInterface({
                       }}
                     >
                       <p className="text-sm">{message.content}</p>
-                      <p className={`text-xs mt-1 ${isCurrentUser ? "text-orange-100" : "text-muted-foreground"}`}>
-                        {new Date(message.created_at).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
+                      <div className={`text-xs mt-1 flex items-center gap-1 ${isCurrentUser ? "text-orange-100" : "text-muted-foreground"}`}>
+                        <span>
+                          {new Date(message.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                        {isCurrentUser && (
+                          message.is_read ? (
+                            <CheckCheck className="h-3.5 w-3.5 text-blue-400" title="Read" />
+                          ) : (
+                            <Check className="h-3.5 w-3.5" title="Sent" />
+                          )
+                        )}
+                      </div>
 
                       {isCurrentUser && (
                         <div className="absolute top-1 right-1">
