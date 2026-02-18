@@ -154,46 +154,46 @@ export default function TeacherProfilePage() {
           ) : !teacher ? (
             <div className="text-muted-foreground">No data found for this teacher.</div>
           ) : (
-            <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
               {/* Left: Teacher summary */}
-              <div className="lg:col-span-1">
-                <Card className="overflow-hidden border-border/50">
-                  <div className="aspect-square">
+              <div className="lg:col-span-1 order-2 lg:order-1">
+                <Card className="overflow-hidden border-border/50 sticky top-20">
+                  <div className="aspect-square sm:aspect-auto sm:h-64 lg:aspect-square">
                     <img
                       src={teacher.photo || "/placeholder.svg?height=600&width=600&query=professional teacher"}
                       alt={teacher.name}
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <CardHeader>
-                    <CardTitle className="text-2xl">{teacher.name}</CardTitle>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center text-sm text-muted-foreground">
+                  <CardHeader className="pb-3 sm:pb-4">
+                    <CardTitle className="text-xl sm:text-2xl">{teacher.name}</CardTitle>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm">
+                      <div className="flex items-center text-muted-foreground">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
                         {teacher.rating}
                         <span className="ml-2">({teacher.reviews} reviews)</span>
                       </div>
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-xs w-fit">
                         {teacher.location}
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3 sm:space-y-4">
                     <div className="text-sm text-muted-foreground">{teacher.bio}</div>
                     <div className="text-sm text-muted-foreground flex items-center">
-                      <Award className="h-4 w-4 mr-1" />
+                      <Award className="h-4 w-4 mr-1 flex-shrink-0" />
                       {teacher.experience}
                     </div>
                     {selectedSkill && (
-                      <div className="flex items-center justify-between p-3 border rounded-md">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border rounded-md">
                         <div>
                           <p className="text-sm font-medium">{selectedSkill.skillName}</p>
                           <p className="text-xs text-muted-foreground capitalize">
                             {selectedSkill.proficiencyLevel} • {selectedSkill.skillYearsExperience} yrs
                           </p>
                         </div>
-                        <div className="text-right">
-                          <span className="text-xl font-bold text-[#FF6600]">₹{selectedSkill.pricePerHour}</span>
+                        <div className="sm:text-right">
+                          <span className="text-lg sm:text-xl font-bold text-[#FF6600]">₹{selectedSkill.pricePerHour}</span>
                           <span className="text-xs text-muted-foreground">/hour</span>
                         </div>
                       </div>
@@ -210,25 +210,25 @@ export default function TeacherProfilePage() {
               </div>
 
               {/* Right: Skills list */}
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-2 order-1 lg:order-2">
                 <Card className="border-border/50">
                   <CardHeader>
                     <CardTitle>Skills Offered</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3 sm:space-y-4">
                     {skills.map((s) => {
                       const isActive = selectedSkill?.skillId === s.skillId
                       return (
                         <div
                           key={s.skillId}
-                          className={`p-4 rounded-md border transition-colors cursor-pointer ${
+                          className={`p-3 sm:p-4 rounded-md border transition-colors cursor-pointer ${
                             isActive ? "border-[#FF6600] bg-orange-50/50" : "border-border hover:bg-muted/30"
                           }`}
                           onClick={() => setSelectedSkill(s)}
                         >
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
-                              <div className="flex items-center gap-2">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <Badge variant="secondary" className="text-xs">
                                   {s.skillCategory}
                                 </Badge>
@@ -238,29 +238,31 @@ export default function TeacherProfilePage() {
                                   </Badge>
                                 )}
                               </div>
-                              <h3 className="text-lg font-semibold mt-1">{s.skillName}</h3>
+                              <h3 className="text-base sm:text-lg font-semibold mt-1">{s.skillName}</h3>
                               {s.skillDescription && (
-                                <p className="text-sm text-muted-foreground mt-1">{s.skillDescription}</p>
+                                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{s.skillDescription}</p>
                               )}
-                              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2 text-sm text-muted-foreground">
                                 <span className="capitalize">{s.proficiencyLevel}</span>
-                                <Separator orientation="vertical" className="h-4" />
+                                <Separator orientation="vertical" className="h-4 hidden sm:block" />
                                 <span>{s.skillYearsExperience} yrs experience</span>
                               </div>
                             </div>
-                            <div className="text-right whitespace-nowrap">
-                              <div className="text-xl font-bold text-[#FF6600]">₹{s.pricePerHour}</div>
-                              <div className="text-xs text-muted-foreground">per hour</div>
+                            <div className="flex items-center justify-between sm:flex-col sm:text-right sm:whitespace-nowrap gap-3">
+                              <div>
+                                <div className="text-lg sm:text-xl font-bold text-[#FF6600]">₹{s.pricePerHour}</div>
+                                <div className="text-xs text-muted-foreground">per hour</div>
+                              </div>
                               <Button
                                 size="sm"
-                                className="mt-2 bg-[#FF6600] hover:bg-[#FF6600]/90 text-white"
+                                className="bg-[#FF6600] hover:bg-[#FF6600]/90 text-white"
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   setSelectedSkill(s)
                                   setIsBookingModalOpen(true)
                                 }}
                               >
-                                Book Now
+                                Book
                               </Button>
                             </div>
                           </div>
