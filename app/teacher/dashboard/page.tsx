@@ -517,7 +517,7 @@ export default function TeacherDashboard() {
                 <Progress value={getProfileCompletion()} className="mb-4" />
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-2 sm:space-y-0">
                   <span className="text-sm text-gray-600">{Math.round(getProfileCompletion())}% Complete</span>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => router.push("/teacher/profile")}>
                     <Edit className="h-4 w-4 mr-2" />
                     Edit Profile
                   </Button>
@@ -561,11 +561,11 @@ export default function TeacherDashboard() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                  <Button className="w-full sm:w-auto">
+                  <Button className="w-full sm:w-auto" onClick={() => router.push("/teacher/profile")}>
                     <Edit className="h-4 w-4 mr-2" />
                     Edit Profile
                   </Button>
-                  <Button variant="outline" className="w-full sm:w-auto bg-transparent">
+                  <Button variant="outline" className="w-full sm:w-auto bg-transparent" onClick={() => teacher?.id && router.push(`/teachers/${teacher.id}`)}>
                     <Eye className="h-4 w-4 mr-2" />
                     Preview as Learner
                   </Button>
