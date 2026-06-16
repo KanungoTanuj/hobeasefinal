@@ -65,7 +65,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setLoading(true)
     setError("")
 
-    const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://v0-hobeaselanding12.vercel.app/auth/callback"
+    const redirectUrl = `${(process.env.NEXT_PUBLIC_SITE_URL || "https://v0-hobeaselanding12.vercel.app").trim()}/auth/callback`
     console.log("[v0] Google OAuth redirect URL:", redirectUrl)
 
     const { error } = await supabase.auth.signInWithOAuth({
@@ -94,7 +94,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setMessage("")
 
     if (isSignUp) {
-      const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://v0-hobeaselanding12.vercel.app/auth/callback"
+      const redirectUrl = `${(process.env.NEXT_PUBLIC_SITE_URL || "https://v0-hobeaselanding12.vercel.app").trim()}/auth/callback`
       console.log("[v0] Email signup redirect URL:", redirectUrl)
 
       const { data, error } = await supabase.auth.signUp({

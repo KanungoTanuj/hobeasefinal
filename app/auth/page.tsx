@@ -65,12 +65,12 @@ export default function AuthPage() {
     setMessage("")
 
     try {
+      const redirectUrl = (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).trim()
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: resendEmail,
         options: {
-          emailRedirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${redirectUrl}/auth/callback`,
         },
       })
 
@@ -154,6 +154,7 @@ export default function AuthPage() {
     }
 
     try {
+      const redirectUrl = (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).trim()
       const { data, error } = await supabase.auth.signUp({
         email: signUpData.email,
         password: signUpData.password,
@@ -161,8 +162,7 @@ export default function AuthPage() {
           data: {
             name: signUpData.name,
           },
-          emailRedirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${redirectUrl}/auth/callback`,
         },
       })
 
