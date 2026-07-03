@@ -1,10 +1,20 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { PhoneOff, Maximize2, Minimize2 } from "lucide-react"
+import { PhoneOff, AlertCircle } from "lucide-react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
+import {
+  LiveKitRoom,
+  VideoConference,
+  GridLayout,
+  ParticipantTile,
+  RoomAudioRenderer,
+  ControlBar,
+  useParticipants,
+} from "@livekit/components-react"
+import "@livekit/components-styles"
 
 interface VideoCallInterfaceProps {
   roomId: string
@@ -25,41 +35,51 @@ export function VideoCallInterface({
   isOpen,
   onClose,
 }: VideoCallInterfaceProps) {
-  const iframeRef = useRef<HTMLIFrameElement>(null)
-  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [token, setToken] = useState<string>("")
   const [isLoading, setIsLoading] = useState(true)
-  const [dailyRoomUrl, setDailyRoomUrl] = useState<string>("")
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!isOpen || !roomId) return
+    if (!isOpen || !classId) {
+      setIsLoading(true)
+      setToken("")
+      return
+    }
 
-    console.log("[v0] VideoCallInterface mounted, roomId:", roomId)
-    console.log("[v0] userName:", userName, "userRole:", userRole)
-
-    // Create Daily.co room
-    const createDailyRoom = async () => {
+    const generateToken = async () => {
       try {
-        const response = await fetch("/api/video/create-room", {
+        setIsLoading(true)
+        setError(null)
+        console.log("[v0] Requesting token for classId:", classId, "roomId:", roomId)
+
+        const response = await fetch("/api/video/token", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ roomId, userName }),
+          body: JSON.stringify({
+            classId,
+            roomName: roomId,
+          }),
         })
 
         if (!response.ok) {
-          throw new Error("Failed to create video room")
+          const errorData = await response.json()
+          throw new Error(errorData.error || "Failed to generate video token")
         }
 
         const data = await response.json()
-        setDailyRoomUrl(data.url)
-        setIsLoading(false)
-      } catch (error) {
-        console.error("[v0] Error creating Daily room:", error)
+        setToken(data.token)
+        console.log("[v0] Token generated successfully for room:", data.roomName)
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : "Failed to connect to video"
+        setError(errorMsg)
+        console.error("[v0] Error generating token:", err)
+      } finally {
         setIsLoading(false)
       }
     }
 
-    createDailyRoom()
-  }, [isOpen, roomId, userName])
+    generateToken()
+  }, [isOpen, classId, roomId])
 
   const handleEndCall = async () => {
     try {
@@ -70,20 +90,11 @@ export function VideoCallInterface({
         body: JSON.stringify({ classId }),
       })
 
+      setToken("")
       onEndCall()
       onClose()
-    } catch (error) {
-      console.error("[v0] Error ending call:", error)
-    }
-  }
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      iframeRef.current?.requestFullscreen()
-      setIsFullscreen(true)
-    } else {
-      document.exitFullscreen()
-      setIsFullscreen(false)
+    } catch (err) {
+      console.error("[v0] Error ending call:", err)
     }
   }
 
@@ -94,18 +105,15 @@ export function VideoCallInterface({
           <CardHeader className="pb-2 pt-3 px-3 md:pb-3 md:pt-6 md:px-6 border-b shrink-0">
             <div className="flex items-center justify-between gap-2">
               <CardTitle className="text-sm md:text-lg truncate">
-                {userRole === "teacher" ? "Teaching" : "Learning"}
+                {userRole === "teacher" ? "Teaching Session" : "Learning Session"}
               </CardTitle>
               <div className="flex items-center gap-1 md:gap-2 shrink-0">
                 <Button
-                  variant="outline"
+                  variant="destructive"
                   size="sm"
-                  onClick={toggleFullscreen}
-                  className="hidden md:flex bg-transparent"
+                  onClick={handleEndCall}
+                  className="text-xs md:text-sm"
                 >
-                  {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                </Button>
-                <Button variant="destructive" size="sm" onClick={handleEndCall} className="text-xs md:text-sm">
                   <PhoneOff className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
                   <span className="hidden md:inline">End Call</span>
                 </Button>
@@ -113,26 +121,45 @@ export function VideoCallInterface({
             </div>
           </CardHeader>
 
-          <CardContent className="flex-1 p-0 relative overflow-hidden">
+          <CardContent className="flex-1 p-0 relative overflow-hidden bg-black">
             {isLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
                 <div className="text-center px-4">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-muted-foreground text-sm md:text-base">Setting up video call...</p>
+                  <p className="text-muted-foreground text-sm md:text-base">Connecting to video call...</p>
                   <p className="text-xs md:text-sm text-muted-foreground mt-2">
-                    {userRole === "teacher" ? "Preparing your teaching session..." : "Connecting to your teacher..."}
+                    Please wait while we set up your {userRole === "teacher" ? "teaching" : "learning"} session
                   </p>
                 </div>
               </div>
             )}
-            {dailyRoomUrl && (
-              <iframe
-                ref={iframeRef}
-                src={dailyRoomUrl}
-                allow="camera; microphone; fullscreen; speaker; display-capture; autoplay"
-                className="w-full h-full border-0"
-                style={{ touchAction: "manipulation" }}
-              />
+
+            {error && (
+              <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+                <div className="text-center px-4">
+                  <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                  <p className="text-destructive font-semibold text-sm md:text-base mb-2">Connection Error</p>
+                  <p className="text-muted-foreground text-xs md:text-sm mb-4">{error}</p>
+                  <Button onClick={onClose} variant="outline" size="sm">
+                    Close
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {token && !isLoading && !error && (
+              <LiveKitRoom
+                video={true}
+                audio={true}
+                token={token}
+                serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
+                data-lk-theme="dark"
+                style={{ height: "100%", width: "100%" }}
+              >
+                <VideoConference />
+                <RoomAudioRenderer />
+                <ControlBar />
+              </LiveKitRoom>
             )}
           </CardContent>
         </Card>
