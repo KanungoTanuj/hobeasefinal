@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
-import { X, Check } from "lucide-react"
+import { Check } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 
 interface AuthModalProps {
@@ -176,13 +176,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl w-full h-[600px] p-0 bg-transparent border-none shadow-none">
         <div className="flex h-full bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl border border-gray-200/50 relative">
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 z-20 p-2 hover:bg-gray-100/80 rounded-full transition-all duration-200 hover:shadow-md backdrop-blur-sm"
-          >
-            <X className="h-5 w-5 text-gray-600" />
-          </button>
-
           {/* Left Carousel Section */}
           <div className="w-1/2 bg-gradient-to-br from-[#FF6600] via-[#FF7A1A] to-[#FF8533] relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-black/5"></div>
