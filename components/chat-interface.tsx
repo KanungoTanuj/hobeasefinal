@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Send, MessageSquare, AlertCircle, ChevronDown, Trash2, Check, CheckCheck } from "lucide-react"
+import { Send, MessageSquare, AlertCircle, ChevronDown, Trash2, Check, CheckCheck, X, Wifi, WifiOff } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
@@ -384,6 +384,7 @@ export function ChatInterface({
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       sendMessage()
@@ -435,189 +436,104 @@ export function ChatInterface({
       : { name: booking.learner_name, role: "learner" }
 
   return (
-    <Card className="h-[600px] min-h-0 flex flex-col overflow-hidden">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Avatar>
-              <AvatarImage src={booking.teacher?.photo_url || "/placeholder.svg?height=40&width=40&query=user"} />
-              <AvatarFallback>{otherParticipant.name.charAt(0)}</AvatarFallback>
+    <Card className="flex h-[min(680px,calc(100vh-10rem))] min-h-[520px] flex-col overflow-hidden rounded-2xl border-border/70 bg-card shadow-xl shadow-black/5">
+      <CardHeader className="border-b border-border/70 bg-muted/20 px-4 py-4 sm:px-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <Avatar className="size-11 shrink-0 ring-2 ring-background shadow-sm">
+              <AvatarImage src={booking.teacher?.photo_url || "/placeholder.svg?height=40&width=40&query=user"} alt={`${otherParticipant.name} profile`} />
+              <AvatarFallback className="bg-primary/10 font-semibold text-primary">{otherParticipant.name.charAt(0)}</AvatarFallback>
             </Avatar>
-            <div>
-              <CardTitle className="text-lg">{otherParticipant.name}</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                {booking.teacher_skill} • {new Date(booking.booking_date).toLocaleDateString()}
+            <div className="min-w-0">
+              <CardTitle className="truncate text-base sm:text-lg">{otherParticipant.name}</CardTitle>
+              <p className="mt-0.5 truncate text-xs text-muted-foreground sm:text-sm">
+                {booking.teacher_skill} <span aria-hidden="true">·</span> {new Date(booking.booking_date).toLocaleDateString()}
               </p>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Badge variant="outline" className="capitalize">
-              {booking.status}
-            </Badge>
-            <span
-              className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs text-muted-foreground"
-              aria-live="polite"
-              aria-atomic="true"
-              title={realtimeConnected ? "Realtime connected" : "Realtime disconnected"}
-            >
-              <span className={`mr-1 h-2 w-2 rounded-full ${realtimeConnected ? "bg-green-500" : "bg-zinc-400"}`} />
-              {realtimeConnected ? "Live" : "Offline"}
+          <div className="flex shrink-0 items-center gap-2">
+            <Badge variant="secondary" className="hidden capitalize sm:inline-flex">{booking.status}</Badge>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground" aria-live="polite" title={realtimeConnected ? "Realtime connected" : "Realtime disconnected"}>
+              {realtimeConnected ? <Wifi className="size-3.5 text-emerald-500" /> : <WifiOff className="size-3.5" />}
+              <span className="hidden sm:inline">{realtimeConnected ? "Live" : "Offline"}</span>
             </span>
             {onClose && (
-              <Button variant="ghost" size="sm" onClick={onClose}>
-                ×
+              <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close chat" className="size-9 rounded-full">
+                <X className="size-4" />
               </Button>
             )}
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 min-h-0 flex flex-col p-0">
+      <CardContent className="flex min-h-0 flex-1 flex-col p-0">
         {error && (
-          <div className="mx-4 mt-2 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
-            <AlertCircle className="h-4 w-4 text-red-500" />
-            <p className="text-sm text-red-700">{error}</p>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setError(null)}
-              className="ml-auto text-red-500 hover:text-red-700"
-            >
-              ×
-            </Button>
+          <div className="mx-4 mt-4 flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2.5 text-destructive sm:mx-6">
+            <AlertCircle className="size-4 shrink-0" />
+            <p className="min-w-0 flex-1 text-sm">{error}</p>
+            <Button size="icon" variant="ghost" onClick={() => setError(null)} aria-label="Dismiss error" className="size-7 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"><X className="size-4" /></Button>
           </div>
         )}
 
-        <div ref={listRef} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
-          {loading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-muted-foreground">Loading messages...</div>
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                <p className="text-muted-foreground">No messages yet</p>
-                <p className="text-sm text-muted-foreground">Start the conversation!</p>
+        <div ref={listRef} className="flex-1 min-h-0 overflow-y-auto bg-muted/5 px-4 py-5 sm:px-6">
+          <div className="mx-auto flex min-h-full max-w-3xl flex-col justify-end gap-3">
+            {loading ? (
+              <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">Loading conversation...</div>
+            ) : messages.length === 0 ? (
+              <div className="flex flex-1 items-center justify-center px-6 text-center">
+                <div className="max-w-xs rounded-2xl border border-dashed border-border bg-background/70 px-6 py-7 shadow-sm">
+                  <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary"><MessageSquare className="size-5" /></div>
+                  <p className="font-medium">Start the conversation</p>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">Send a message to {otherParticipant.name} about your upcoming session.</p>
+                </div>
               </div>
-            </div>
-          ) : (
-            messages.map((message) => {
-              const isCurrentUser = message.sender_auth_id === currentUserId
-              return (
-                <div key={message.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
-                  <div className="relative group">
-                    <div
-                      className={`max-w-[70%] rounded-lg px-3 py-2 ${
-                        isCurrentUser ? "bg-[#FF6600] text-white" : "bg-muted text-foreground"
-                      }`}
-                      // Mobile: long-press anywhere on the bubble to open the menu
-                      onTouchStart={() => isCurrentUser && startLongPress(message.id)}
-                      onTouchEnd={() => isCurrentUser && cancelLongPress(message.id)}
-                      onTouchMove={() => isCurrentUser && cancelLongPress(message.id)}
-                      // Desktop: right-click also opens menu
-                      onContextMenu={(e) => {
-                        if (!isCurrentUser) return
-                        e.preventDefault()
-                        setOpenMenuForId(message.id)
-                      }}
-                    >
-                      <p className="text-sm">{message.content}</p>
-                      <div className={`text-xs mt-1 flex items-center gap-1 ${isCurrentUser ? "text-orange-100" : "text-muted-foreground"}`}>
-                        <span>
-                          {new Date(message.created_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
+            ) : (
+              messages.map((message) => {
+                const isCurrentUser = message.sender_auth_id === currentUserId
+                return (
+                  <div key={message.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
+                    <div className={`group relative flex max-w-[88%] flex-col sm:max-w-[72%] ${isCurrentUser ? "items-end" : "items-start"}`}>
+                      <div
+                        className={`relative rounded-2xl px-4 py-3 shadow-sm ${isCurrentUser ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md border border-border/70 bg-background text-foreground"}`}
+                        onTouchStart={() => isCurrentUser && startLongPress(message.id)}
+                        onTouchEnd={() => isCurrentUser && cancelLongPress(message.id)}
+                        onTouchMove={() => isCurrentUser && cancelLongPress(message.id)}
+                        onContextMenu={(e) => { if (!isCurrentUser) return; e.preventDefault(); setOpenMenuForId(message.id) }}
+                      >
+                        <p className="whitespace-pre-wrap break-words text-sm leading-6">{message.content}</p>
+                        <div className={`mt-1.5 flex items-center justify-end gap-1 text-[11px] ${isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                          <span>{new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                          {isCurrentUser && (message.is_read ? <CheckCheck className="size-3.5 text-sky-300" title="Read" /> : <Check className="size-3.5" title="Sent" />)}
+                        </div>
                         {isCurrentUser && (
-                          message.is_read ? (
-                            <CheckCheck className="h-3.5 w-3.5 text-blue-400" title="Read" />
-                          ) : (
-                            <Check className="h-3.5 w-3.5" title="Sent" />
-                          )
+                          <div className="absolute -right-2 -top-2">
+                            <DropdownMenu open={openMenuForId === message.id} onOpenChange={(open) => setOpenMenuForId(open ? message.id : null)}>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="secondary" size="icon" className="hidden size-7 rounded-full border shadow-sm opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 data-[state=open]:opacity-100 md:inline-flex" aria-label="Message options" onClick={() => setOpenMenuForId(message.id)}><ChevronDown className="size-3.5" /></Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => { if (deletingIds.has(message.id)) return; if (confirm("Delete this message?")) handleDeleteMessage(message.id); setOpenMenuForId(null) }} disabled={deletingIds.has(message.id)}><Trash2 className="mr-2 size-4" />Delete</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         )}
                       </div>
-
-                      {isCurrentUser && (
-                        <div className="absolute top-1 right-1">
-                          <DropdownMenu
-                            open={openMenuForId === message.id}
-                            onOpenChange={(open) => setOpenMenuForId(open ? message.id : null)}
-                          >
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="hidden md:inline-flex h-6 w-6 rounded-full p-0 
-                                           bg-background/60 hover:bg-background
-                                           opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 
-                                           data-[state=open]:opacity-100 focus:opacity-100 
-                                           transition-opacity duration-150"
-                                aria-label="Message options"
-                                onClick={() => setOpenMenuForId(message.id)}
-                              >
-                                <ChevronDown className="h-3.5 w-3.5" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40">
-                              <DropdownMenuItem
-                                className="text-red-600 focus:text-red-700"
-                                onClick={() => {
-                                  if (deletingIds.has(message.id)) return
-                                  const ok = confirm("Delete this message?")
-                                  if (ok) handleDeleteMessage(message.id)
-                                  setOpenMenuForId(null)
-                                }}
-                                disabled={deletingIds.has(message.id)}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      )}
                     </div>
                   </div>
-                </div>
-              )
-            })
-          )}
-          <div ref={messagesEndRef} />
+                )
+              })
+            )}
+            <div ref={messagesEndRef} />
+          </div>
         </div>
 
-        <div className="border-t p-4">
-          <div className="flex space-x-2">
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Type your message..."
-              disabled={sending}
-              className="flex-1"
-            />
-            <Button
-              onClick={sendMessage}
-              disabled={!newMessage.trim() || sending}
-              size="sm"
-              className="bg-[#FF6600] hover:bg-[#FF6600]/90"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+        <div className="border-t border-border/70 bg-background px-4 py-3 sm:px-6 sm:py-4">
+          <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border border-border bg-muted/30 p-1.5 shadow-sm transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10">
+            <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={handleKeyPress} placeholder="Write a message..." disabled={sending} aria-label="Message" className="h-10 border-0 bg-transparent px-3 shadow-none focus-visible:ring-0" />
+            <Button onClick={sendMessage} disabled={!newMessage.trim() || sending} size="icon" aria-label="Send message" className="size-10 shrink-0 rounded-xl"><Send className="size-4" /></Button>
           </div>
-          {error && (
-            <div className="mt-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => fetchMessages(false)}
-                className="text-xs bg-transparent"
-              >
-                Retry Loading Messages
-              </Button>
-            </div>
-          )}
+          <p className="mx-auto mt-2 hidden max-w-3xl text-[11px] text-muted-foreground sm:block">Press Enter to send <span aria-hidden="true">·</span> Shift + Enter for a new line</p>
+          {error && <div className="mx-auto mt-2 max-w-3xl"><Button size="sm" variant="outline" onClick={() => fetchMessages(false)} className="text-xs">Retry loading messages</Button></div>}
         </div>
       </CardContent>
     </Card>
