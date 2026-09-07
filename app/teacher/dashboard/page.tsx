@@ -833,7 +833,10 @@ export default function TeacherDashboard() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => setSelectedBookingForChat(booking)}
+                                onClick={() => {
+                                  setSelectedBookingForChat(booking)
+                                  setActiveTab("messages")
+                                }}
                                 className="text-xs"
                               >
                                 <MessageSquare className="h-3 w-3 mr-1" />

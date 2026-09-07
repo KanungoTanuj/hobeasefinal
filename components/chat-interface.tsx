@@ -435,6 +435,16 @@ export function ChatInterface({
       ? { name: booking.teacher_name, role: "teacher" }
       : { name: booking.learner_name, role: "learner" }
 
+  const formatMessageDate = (value: string) =>
+    new Date(value).toLocaleDateString([], {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
+
+  const messageDateKey = (value: string) => new Date(value).toLocaleDateString()
+
   return (
     <Card className="flex h-[min(680px,calc(100vh-10rem))] min-h-[520px] flex-col overflow-hidden rounded-2xl border-border/70 bg-card shadow-xl shadow-black/5">
       <CardHeader className="border-b border-border/70 bg-muted/20 px-4 py-4 sm:px-6">
@@ -488,10 +498,24 @@ export function ChatInterface({
                 </div>
               </div>
             ) : (
-              messages.map((message) => {
+              messages.map((message, index) => {
                 const isCurrentUser = message.sender_auth_id === currentUserId
+                const currentDateKey = messageDateKey(message.created_at)
+                const previousDateKey = index > 0 ? messageDateKey(messages[index - 1].created_at) : null
+                const isNewDate = currentDateKey !== previousDateKey
+
                 return (
-                  <div key={message.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
+                  <div key={message.id} className="flex flex-col gap-3">
+                    {isNewDate && (
+                      <div className="flex items-center gap-3 py-2" aria-label={`Messages from ${formatMessageDate(message.created_at)}`}>
+                        <div className="h-px flex-1 bg-border/70" />
+                        <span className="rounded-full border border-border/70 bg-background px-3 py-1 text-[11px] font-medium text-muted-foreground shadow-sm">
+                          {formatMessageDate(message.created_at)}
+                        </span>
+                        <div className="h-px flex-1 bg-border/70" />
+                      </div>
+                    )}
+                    <div className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
                     <div className={`group relative flex max-w-[88%] flex-col sm:max-w-[72%] ${isCurrentUser ? "items-end" : "items-start"}`}>
                       <div
                         className={`relative rounded-2xl px-4 py-3 shadow-sm ${isCurrentUser ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md border border-border/70 bg-background text-foreground"}`}
@@ -518,6 +542,7 @@ export function ChatInterface({
                           </div>
                         )}
                       </div>
+                    </div>
                     </div>
                   </div>
                 )
