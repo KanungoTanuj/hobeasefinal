@@ -261,15 +261,25 @@ export function ChatInterface({
         )
         if (unreadMessages.length > 0) {
           console.log("[v0] Marking", unreadMessages.length, "messages as read")
+          const readAt = new Date().toISOString()
           const { error: updateError } = await supabase
             .from("messages")
-            .update({ is_read: true, read_at: new Date().toISOString() })
+            .update({ is_read: true, read_at: readAt })
             .in(
               "id",
               unreadMessages.map((m) => m.id),
             )
           if (updateError) {
             console.error("[v0] Error marking messages as read:", updateError)
+          } else {
+            // Update the local transcript immediately; realtime UPDATE delivery is not guaranteed.
+            setMessages((current) =>
+              current.map((message) =>
+                unreadMessages.some((unread) => unread.id === message.id)
+                  ? { ...message, is_read: true, read_at: readAt }
+                  : message,
+              ),
+            )
           }
         }
       }
