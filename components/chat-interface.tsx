@@ -432,8 +432,8 @@ export function ChatInterface({
 
   const otherParticipant =
     currentUserRole === "learner"
-      ? { name: booking.teacher_name, role: "teacher" }
-      : { name: booking.learner_name, role: "learner" }
+      ? { name: booking.teacher_name, role: "teacher", photoUrl: booking.teacher?.photo_url }
+      : { name: booking.learner_name, role: "learner", photoUrl: undefined }
 
   const formatMessageDate = (value: string) =>
     new Date(value).toLocaleDateString([], {
@@ -529,6 +529,17 @@ export function ChatInterface({
                           <span>{new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                           {isCurrentUser && (message.is_read ? <CheckCheck className="size-3.5 text-sky-300" title="Read" /> : <Check className="size-3.5" title="Sent" />)}
                         </div>
+                        {isCurrentUser && message.is_read && (
+                          <div className="mt-1 flex items-center gap-1.5 pr-1 text-[10px] text-muted-foreground" aria-label={`Seen by ${otherParticipant.name}`}>
+                            <Avatar className="size-5 border border-background shadow-sm">
+                              <AvatarImage src={otherParticipant.photoUrl || undefined} alt="" />
+                              <AvatarFallback className="bg-primary/10 text-[9px] font-semibold text-primary">
+                                {otherParticipant.name.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="sr-only">Seen by {otherParticipant.name}</span>
+                          </div>
+                        )}
                         {isCurrentUser && (
                           <div className="absolute -right-2 -top-2">
                             <DropdownMenu open={openMenuForId === message.id} onOpenChange={(open) => setOpenMenuForId(open ? message.id : null)}>
