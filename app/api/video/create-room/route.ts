@@ -1,66 +1,39 @@
+import { AccessToken } from "livekit-server-sdk"
 import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
   try {
-    const { roomId, userName } = await request.json()
-
-    const dailyApiKey = process.env.DAILY_API_KEY || "bbd818e92aa3d8af71bd153e08be948d79b1d2a9bad8eba412a8e788e4f3feca"
-    const dailyDomain = process.env.DAILY_DOMAIN || "hobease.daily.co"
-
-    if (!dailyApiKey) {
-      console.error("[v0] Daily.co API key not configured")
-      return NextResponse.json({ error: "Video service not configured" }, { status: 500 })
+    const { roomId, userName, userRole } = await request.json()
+    if (!roomId || !userName || !["teacher", "learner"].includes(userRole)) {
+      return NextResponse.json({ error: "Invalid video room details" }, { status: 400 })
     }
 
-    // Create a room using Daily.co API
-    const response = await fetch("https://api.daily.co/v1/rooms", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${dailyApiKey}`,
-      },
-      body: JSON.stringify({
-        name: roomId,
-        privacy: "public",
-        properties: {
-          enable_screenshare: true,
-          enable_chat: true,
-          start_video_off: false,
-          start_audio_off: false,
-          max_participants: 2,
-        },
-      }),
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      console.error("[v0] Daily.co API error:", errorData)
-
-      // If room already exists, that's okay - just use it
-      if (errorData.error === "room-name-already-exists" || response.status === 409) {
-        const roomUrl = `https://${dailyDomain}/${roomId}?t=${encodeURIComponent(userName)}`
-        console.log("[v0] Using existing Daily.co room:", roomUrl)
-        return NextResponse.json({
-          url: roomUrl,
-          roomId: roomId,
-        })
-      }
-
-      return NextResponse.json({ error: "Failed to create video room" }, { status: 500 })
+    const url = process.env.LIVEKIT_URL
+    const apiKey = process.env.LIVEKIT_API_KEY
+    const apiSecret = process.env.LIVEKIT_API_SECRET
+    if (!url || !apiKey || !apiSecret) {
+      return NextResponse.json({ error: "Video service is not configured" }, { status: 503 })
     }
 
-    const roomData = await response.json()
-    const roomUrl = `${roomData.url}?t=${encodeURIComponent(userName)}`
-
-    console.log("[v0] Created Daily.co room:", roomUrl)
-
-    return NextResponse.json({
-      url: roomUrl,
-      roomId: roomId,
-      roomData: roomData,
+    const identity = `${userRole}:${crypto.randomUUID()}`
+    const token = new AccessToken(apiKey, apiSecret, {
+      identity,
+      name: userName,
+      ttl: "2h",
+      metadata: JSON.stringify({ role: userRole }),
     })
+    token.addGrant({
+      room: roomId,
+      roomJoin: true,
+      canPublish: true,
+      canSubscribe: true,
+      canPublishData: true,
+      roomAdmin: userRole === "teacher",
+    })
+
+    return NextResponse.json({ token: await token.toJwt(), serverUrl: url, roomId })
   } catch (error) {
-    console.error("[v0] Error creating Daily room:", error)
-    return NextResponse.json({ error: "Failed to create video room" }, { status: 500 })
+    console.error("[v0] Error creating LiveKit token", error)
+    return NextResponse.json({ error: "Failed to connect to video room" }, { status: 500 })
   }
 }

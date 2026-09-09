@@ -1,10 +1,23 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
+import {
+  AudioConference,
+  ControlBar,
+  LiveKitRoom,
+  RoomAudioRenderer,
+  useConnectionState,
+  useLocalParticipant,
+  useParticipants,
+  useRoomContext,
+  VideoConference,
+} from "@livekit/components-react"
+import { ConnectionState, RoomEvent } from "livekit-client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { PhoneOff, Maximize2, Minimize2 } from "lucide-react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { PhoneOff, ShieldCheck, Users, X } from "lucide-react"
+import "@livekit/components-styles"
 
 interface VideoCallInterfaceProps {
   roomId: string
@@ -16,124 +29,139 @@ interface VideoCallInterfaceProps {
   onClose: () => void
 }
 
-export function VideoCallInterface({
-  roomId,
-  classId,
-  userName,
-  userRole,
-  onEndCall,
-  isOpen,
-  onClose,
-}: VideoCallInterfaceProps) {
-  const iframeRef = useRef<HTMLIFrameElement>(null)
-  const [isFullscreen, setIsFullscreen] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [dailyRoomUrl, setDailyRoomUrl] = useState<string>("")
+function ModerationBar({ userRole, onEndCall }: { userRole: "teacher" | "learner"; onEndCall: () => void }) {
+  const room = useRoomContext()
+  const participants = useParticipants()
+  const connectionState = useConnectionState()
+  const { localParticipant } = useLocalParticipant()
+  const [mutedParticipant, setMutedParticipant] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!isOpen || !roomId) return
+  const endCall = async () => {
+    await room.disconnect()
+    onEndCall()
+  }
 
-    console.log("[v0] VideoCallInterface mounted, roomId:", roomId)
-    console.log("[v0] userName:", userName, "userRole:", userRole)
-
-    // Create Daily.co room
-    const createDailyRoom = async () => {
-      try {
-        const response = await fetch("/api/video/create-room", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ roomId, userName }),
-        })
-
-        if (!response.ok) {
-          throw new Error("Failed to create video room")
-        }
-
-        const data = await response.json()
-        setDailyRoomUrl(data.url)
-        setIsLoading(false)
-      } catch (error) {
-        console.error("[v0] Error creating Daily room:", error)
-        setIsLoading(false)
-      }
-    }
-
-    createDailyRoom()
-  }, [isOpen, roomId, userName])
-
-  const handleEndCall = async () => {
+  const muteParticipant = async (identity: string) => {
+    if (userRole !== "teacher") return
     try {
-      console.log("[v0] Ending call for classId:", classId)
-      await fetch("/api/classes/end", {
+      await fetch("/api/video/moderate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ classId }),
+        body: JSON.stringify({ roomName: room.name, action: "mute", identity }),
       })
-
-      onEndCall()
-      onClose()
+      setMutedParticipant(identity)
     } catch (error) {
-      console.error("[v0] Error ending call:", error)
+      console.error("[v0] Unable to moderate participant", error)
     }
   }
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      iframeRef.current?.requestFullscreen()
-      setIsFullscreen(true)
-    } else {
-      document.exitFullscreen()
-      setIsFullscreen(false)
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-card px-3 py-2 text-xs md:px-5">
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <ShieldCheck className="size-4 text-primary" aria-hidden="true" />
+        <span>{connectionState === ConnectionState.Connected ? "Secure call" : "Connecting"}</span>
+        <span aria-hidden="true">·</span>
+        <Users className="size-4" aria-hidden="true" />
+        <span>{participants.length} connected</span>
+      </div>
+      <div className="flex items-center gap-2">
+        {userRole === "teacher" && participants.filter((p) => p.identity !== localParticipant.identity).map((participant) => (
+          <Button
+            key={participant.identity}
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => muteParticipant(participant.identity)}
+            disabled={mutedParticipant === participant.identity}
+          >
+            {mutedParticipant === participant.identity ? "Muted" : `Mute ${participant.name || "participant"}`}
+          </Button>
+        ))}
+        <Button type="button" variant="destructive" size="sm" onClick={endCall}>
+          <PhoneOff data-icon="inline-start" />
+          End call
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function CallRoom({ userRole, onEndCall }: { userRole: "teacher" | "learner"; onEndCall: () => void }) {
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-muted/30">
+      <div className="min-h-0 flex-1">
+        <VideoConference />
+      </div>
+      <RoomAudioRenderer />
+      <ModerationBar userRole={userRole} onEndCall={onEndCall} />
+    </div>
+  )
+}
+
+export function VideoCallInterface({ roomId, classId, userName, userRole, onEndCall, isOpen, onClose }: VideoCallInterfaceProps) {
+  const [token, setToken] = useState<string>("")
+  const [serverUrl, setServerUrl] = useState<string>("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string>("")
+
+  useEffect(() => {
+    if (!isOpen || !roomId) return
+    let cancelled = false
+    setIsLoading(true)
+    setError("")
+    setToken("")
+
+    fetch("/api/video/create-room", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ roomId, classId, userName, userRole }),
+    })
+      .then(async (response) => {
+        const data = await response.json()
+        if (!response.ok) throw new Error(data.error || "Unable to connect to the video call")
+        if (!cancelled) {
+          setToken(data.token)
+          setServerUrl(data.serverUrl)
+        }
+      })
+      .catch((reason: Error) => {
+        if (!cancelled) setError(reason.message)
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [classId, isOpen, roomId, userName, userRole])
+
+  const handleEndCall = async () => {
+    try {
+      await fetch("/api/classes/end", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ classId }) })
+    } finally {
+      onEndCall()
+      onClose()
     }
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-screen h-screen max-w-none max-h-none p-0 m-0 md:max-w-[95vw] md:max-h-[95vh] md:h-[95vh] md:rounded-lg">
-        <Card className="h-full w-full flex flex-col border-0 rounded-none md:rounded-lg">
-          <CardHeader className="pb-2 pt-3 px-3 md:pb-3 md:pt-6 md:px-6 border-b shrink-0">
-            <div className="flex items-center justify-between gap-2">
-              <CardTitle className="text-sm md:text-lg truncate">
-                {userRole === "teacher" ? "Teaching" : "Learning"}
-              </CardTitle>
-              <div className="flex items-center gap-1 md:gap-2 shrink-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={toggleFullscreen}
-                  className="hidden md:flex bg-transparent"
-                >
-                  {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                </Button>
-                <Button variant="destructive" size="sm" onClick={handleEndCall} className="text-xs md:text-sm">
-                  <PhoneOff className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
-                  <span className="hidden md:inline">End Call</span>
-                </Button>
-              </div>
+      <DialogContent className="h-screen w-screen max-w-none gap-0 overflow-hidden p-0 md:h-[95vh] md:max-h-[95vh] md:max-w-[95vw] md:rounded-lg">
+        <Card className="flex h-full w-full flex-col rounded-none border-0 md:rounded-lg">
+          <CardHeader className="flex shrink-0 flex-row items-center justify-between border-b px-4 py-3 md:px-6">
+            <div>
+              <CardTitle className="text-base">{userRole === "teacher" ? "Teaching session" : "Learning session"}</CardTitle>
+              <p className="mt-1 text-xs text-muted-foreground">Private room with moderation controls</p>
             </div>
+            <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Close video call">
+              <X />
+            </Button>
           </CardHeader>
-
-          <CardContent className="flex-1 p-0 relative overflow-hidden">
-            {isLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
-                <div className="text-center px-4">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-muted-foreground text-sm md:text-base">Setting up video call...</p>
-                  <p className="text-xs md:text-sm text-muted-foreground mt-2">
-                    {userRole === "teacher" ? "Preparing your teaching session..." : "Connecting to your teacher..."}
-                  </p>
-                </div>
-              </div>
-            )}
-            {dailyRoomUrl && (
-              <iframe
-                ref={iframeRef}
-                src={dailyRoomUrl}
-                allow="camera; microphone; fullscreen; speaker; display-capture; autoplay"
-                className="w-full h-full border-0"
-                style={{ touchAction: "manipulation" }}
-              />
-            )}
+          <CardContent className="min-h-0 flex-1 p-0">
+            {isLoading && <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Setting up secure video call...</div>}
+            {error && <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-sm text-destructive"><p>{error}</p><Button type="button" variant="outline" onClick={onClose}>Close</Button></div>}
+            {token && serverUrl && <LiveKitRoom token={token} serverUrl={serverUrl} connect audio video className="h-full"><CallRoom userRole={userRole} onEndCall={handleEndCall} /></LiveKitRoom>}
           </CardContent>
         </Card>
       </DialogContent>
