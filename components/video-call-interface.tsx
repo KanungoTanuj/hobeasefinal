@@ -2,17 +2,18 @@
 
 import { useEffect, useState } from "react"
 import {
-  AudioConference,
   ControlBar,
+  GridLayout,
   LiveKitRoom,
+  ParticipantTile,
   RoomAudioRenderer,
   useConnectionState,
   useLocalParticipant,
   useParticipants,
   useRoomContext,
-  VideoConference,
+  useTracks,
 } from "@livekit/components-react"
-import { ConnectionState, RoomEvent } from "livekit-client"
+import { ConnectionState, Track } from "livekit-client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
@@ -86,14 +87,55 @@ function ModerationBar({ userRole, onEndCall }: { userRole: "teacher" | "learner
   )
 }
 
+function ParticipantStage() {
+  const tracks = useTracks(
+    [
+      { source: Track.Source.Camera, withPlaceholder: true },
+      { source: Track.Source.ScreenShare, withPlaceholder: false },
+    ],
+    { onlySubscribed: false },
+  )
+
+  return (
+    <div className="min-h-0 flex-1 overflow-hidden bg-foreground/95 p-3 md:p-5">
+      {tracks.length > 0 ? (
+        <GridLayout tracks={tracks} className="h-full gap-3 md:gap-4">
+          {(track) => <ParticipantTile trackRef={track} className="overflow-hidden rounded-2xl border border-background/20 shadow-xl" />}
+        </GridLayout>
+      ) : (
+        <div className="flex h-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-background/20 bg-background/5 text-center text-background/70">
+          <Users className="size-8" aria-hidden="true" />
+          <p className="text-sm font-medium">Waiting for another participant</p>
+          <p className="text-xs text-background/50">Your camera and microphone are ready.</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function CallRoom({ userRole, onEndCall }: { userRole: "teacher" | "learner"; onEndCall: () => void }) {
   return (
-    <div className="flex h-full min-h-0 flex-col bg-muted/30">
-      <div className="min-h-0 flex-1">
-        <VideoConference />
+    <div className="flex h-full min-h-0 flex-col bg-background">
+      <div className="flex shrink-0 items-center justify-between border-b border-border/80 bg-card px-4 py-3 md:px-5">
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+            <ShieldCheck className="size-4" aria-hidden="true" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold tracking-tight">Hobease video room</p>
+            <p className="text-xs text-muted-foreground">Private, moderated learning session</p>
+          </div>
+        </div>
+        <span className="hidden rounded-full bg-secondary/10 px-3 py-1 text-xs font-medium text-secondary md:inline-flex">Live session</span>
       </div>
+      <ParticipantStage />
       <RoomAudioRenderer />
-      <ModerationBar userRole={userRole} onEndCall={onEndCall} />
+      <div className="flex shrink-0 flex-col gap-3 border-t border-border/80 bg-card px-3 py-3 md:px-5">
+        <div className="flex justify-center [&_.lk-control-bar]:!static [&_.lk-control-bar]:!transform-none [&_.lk-control-bar]:!border-0 [&_.lk-control-bar]:!bg-transparent [&_.lk-control-bar]:!p-0">
+          <ControlBar variation="minimal" controls={{ chat: false, screenShare: true }} />
+        </div>
+        <ModerationBar userRole={userRole} onEndCall={onEndCall} />
+      </div>
     </div>
   )
 }
