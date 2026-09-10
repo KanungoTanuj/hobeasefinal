@@ -48,6 +48,17 @@ interface VideoCallInterfaceProps {
 
 type RoomChatMessage = { id: string; sender: string; text: string; sentAt: string }
 
+const CHAT_TOPIC = "hobease-chat"
+const HAND_TOPIC = "hobease-hand"
+
+function decodeRoomData(payload: Uint8Array) {
+  try {
+    return JSON.parse(new TextDecoder().decode(payload)) as { type?: string; [key: string]: unknown }
+  } catch {
+    return null
+  }
+}
+
 function getParticipantName(participant: Participant) {
   return participant.name || participant.identity || "Participant"
 }
@@ -78,14 +89,13 @@ function InCallChat({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
 
   useEffect(() => {
     const handleData = (payload: Uint8Array, participant?: Participant, _kind?: unknown, topic?: string) => {
-      if (topic && topic !== "hobease-chat") return
-      try {
-        const message = JSON.parse(new TextDecoder().decode(payload)) as Partial<RoomChatMessage> & { type?: string }
-        if (message.type !== "chat" || !message.text) return
-        setMessages((current) => [...current, { id: message.id || crypto.randomUUID(), sender: message.sender || getParticipantName(participant || localParticipant), text: message.text, sentAt: message.sentAt || new Date().toISOString() }])
-      } catch {
-        // Ignore data packets that are not Hobease chat messages.
-      }
+      if (topic && topic !== CHAT_TOPIC) return
+      const message = decodeRoomData(payload) as Partial<RoomChatMessage> & { type?: string } | null
+      if (message?.type !== "chat" || !message.text) return
+      setMessages((current) => {
+        if (current.some((item) => item.id === message.id)) return current
+        return [...current, { id: message.id || crypto.randomUUID(), sender: message.sender || getParticipantName(participant || localParticipant), text: message.text, sentAt: message.sentAt || new Date().toISOString() }]
+      })
     }
     room.on(RoomEvent.DataReceived, handleData)
     return () => {
@@ -165,17 +175,31 @@ function LiveRoom({ userRole, onEndCall }: { userRole: "teacher" | "learner"; on
   }, [localParticipant])
 
   useEffect(() => {
-    const handleData = (payload: Uint8Array, participant?: Participant, _kind?: unknown, topic?: string) => {
-      if (topic && topic !== "hobease-hand") return
-      try {
-        const message = JSON.parse(new TextDecoder().decode(payload)) as { type?: string; raised?: boolean }
-        if (message.type !== "hand") return
-        const identity = participant?.identity
-        if (!identity) return
-        setRaisedHands((current) => message.raised ? Array.from(new Set([...current, identity])) : current.filter((item) => item !== identity))
-      } catch {
-        // Ignore unrelated room data.
+    if (connectionState !== ConnectionState.Connected || localParticipant.isMicrophoneEnabled) return
+    let cancelled = false
+    void localParticipant.setMicrophoneEnabled(true).then(() => {
+      if (!cancelled) {
+        setMicrophoneOn(true)
+        setAudioError("")
       }
+    }).catch((error) => {
+      console.error("[v0] Initial microphone publish failed", error)
+      if (!cancelled) {
+        setMicrophoneOn(false)
+        setAudioError("Microphone access is blocked. Use your browser or phone permissions to allow it, then tap the microphone button.")
+      }
+    })
+    return () => { cancelled = true }
+  }, [connectionState, localParticipant])
+
+  useEffect(() => {
+    const handleData = (payload: Uint8Array, participant?: Participant, _kind?: unknown, topic?: string) => {
+      if (topic && topic !== HAND_TOPIC) return
+      const message = decodeRoomData(payload) as { type?: string; raised?: boolean } | null
+      if (message?.type !== "hand") return
+      const identity = participant?.identity
+      if (!identity) return
+      setRaisedHands((current) => message.raised ? Array.from(new Set([...current, identity])) : current.filter((item) => item !== identity))
     }
     room.on(RoomEvent.DataReceived, handleData)
     return () => { room.off(RoomEvent.DataReceived, handleData) }
