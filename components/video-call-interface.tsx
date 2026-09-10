@@ -126,12 +126,16 @@ function InCallChat({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
 }
 
 function ParticipantStage({ raisedHands }: { raisedHands: string[] }) {
-  const tracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: true }, { source: Track.Source.ScreenShare, withPlaceholder: true }], { onlySubscribed: false })
-  return <div className="grid min-h-0 flex-1 auto-rows-fr grid-cols-1 gap-3 overflow-auto bg-[#18232c] p-3 md:grid-cols-2 md:p-5">{tracks.length > 0 ? tracks.map((track) => {
+  const tracks = useTracks(
+    [{ source: Track.Source.Camera, withPlaceholder: true }, { source: Track.Source.ScreenShare, withPlaceholder: false }],
+    { onlySubscribed: false },
+  )
+
+  return <div className="grid min-h-0 flex-1 auto-rows-[minmax(220px,1fr)] grid-cols-[repeat(auto-fit,minmax(min(100%,360px),1fr))] gap-3 overflow-auto bg-[#18232c] p-3 md:p-5">{tracks.length > 0 ? tracks.map((track) => {
     const participantName = getParticipantName(track.participant)
     const isHandRaised = raisedHands.includes(track.participant.identity)
     return <div key={`${track.participant.identity}-${track.source}`} className="relative min-h-0 overflow-hidden rounded-2xl border border-white/10 bg-[#243642] shadow-xl">
-      {isHandRaised && <div className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-lg"><Hand className="size-3.5" />{participantName} raised a hand</div>}
+      {isHandRaised && <div className="absolute inset-x-3 top-3 z-10 flex items-center gap-2 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-lg"><Hand className="size-3.5" />{participantName} raised a hand</div>}
       <ParticipantTile trackRef={track} className="size-full overflow-hidden" />
     </div>
   }) : <div className="col-span-full flex min-h-64 items-center justify-center rounded-2xl border border-dashed border-white/15 text-center text-white/70"><div><Video className="mx-auto mb-2 size-8" /><p className="text-sm font-medium">Your classroom is ready</p><p className="mt-1 text-xs text-white/50">Turn on your camera or share your screen to begin.</p></div></div>}</div>
@@ -174,19 +178,34 @@ function LiveRoom({ userRole, onEndCall }: { userRole: "teacher" | "learner"; on
   }, [room])
 
   const toggleCamera = async () => {
-    const next = !localParticipant.isCameraEnabled
-    await localParticipant.setCameraEnabled(next)
-    setCameraOn(next)
+    try {
+      const next = !localParticipant.isCameraEnabled
+      await localParticipant.setCameraEnabled(next)
+      setCameraOn(localParticipant.isCameraEnabled)
+    } catch (error) {
+      console.error("[v0] Camera toggle failed", error)
+      setCameraOn(false)
+    }
   }
   const toggleMicrophone = async () => {
-    const next = !localParticipant.isMicrophoneEnabled
-    await localParticipant.setMicrophoneEnabled(next)
-    setMicrophoneOn(next)
+    try {
+      const next = !localParticipant.isMicrophoneEnabled
+      await localParticipant.setMicrophoneEnabled(next)
+      setMicrophoneOn(localParticipant.isMicrophoneEnabled)
+    } catch (error) {
+      console.error("[v0] Microphone toggle failed", error)
+      setMicrophoneOn(false)
+    }
   }
   const toggleScreenShare = async () => {
-    const next = !localParticipant.isScreenShareEnabled
-    await localParticipant.setScreenShareEnabled(next)
-    setScreenShareOn(next)
+    try {
+      const next = !localParticipant.isScreenShareEnabled
+      await localParticipant.setScreenShareEnabled(next)
+      setScreenShareOn(localParticipant.isScreenShareEnabled)
+    } catch (error) {
+      console.error("[v0] Screen share toggle failed", error)
+      setScreenShareOn(false)
+    }
   }
   const toggleHand = async () => {
     const next = !handRaised
@@ -200,9 +219,16 @@ function LiveRoom({ userRole, onEndCall }: { userRole: "teacher" | "learner"; on
     else await stageRef.current.requestFullscreen()
     setFullscreen(Boolean(document.fullscreenElement))
   }
+  useEffect(() => {
+    const handleFullscreenChange = () => setFullscreen(document.fullscreenElement === stageRef.current)
+    document.addEventListener("fullscreenchange", handleFullscreenChange)
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange)
+  }, [])
+
   const endCall = async () => { await room.disconnect(); onEndCall() }
 
   return <div ref={stageRef} className="flex min-h-0 flex-1 flex-col bg-[#18232c] text-white">
+    <RoomAudioRenderer />
     <div className="flex shrink-0 items-center justify-between border-b border-white/10 bg-[#20313d] px-4 py-3"><div className="flex items-center gap-3"><div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground"><ShieldCheck className="size-4" /></div><div><p className="text-sm font-semibold">Hobease live classroom</p><p className="text-xs text-white/60">{connectionState === ConnectionState.Connected ? "Connected securely" : "Connecting securely"}</p></div></div><div className="flex max-w-[60%] flex-wrap items-center justify-end gap-2 text-xs text-white/60"><span className="flex items-center gap-1.5"><Users className="size-4" />{participants.length} connected</span><div className="hidden items-center gap-1.5 sm:flex">{participants.map((participant) => <span key={participant.identity} className="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-white/75">{getParticipantName(participant)}</span>)}</div>{raisedHands.length > 0 && <span className="rounded-full bg-primary/20 px-2 py-1 text-primary">{raisedHands.length} hand{raisedHands.length === 1 ? "" : "s"} raised</span>}</div></div>
     <div className="flex min-h-0 flex-1 flex-col md:flex-row"><ParticipantStage raisedHands={raisedHands} /><InCallChat isOpen={chatOpen} onClose={() => setChatOpen(false)} /></div>
     <div className="flex shrink-0 flex-wrap items-center justify-center gap-2 border-t border-white/10 bg-[#20313d] px-3 py-3 md:gap-3"><ControlButton label={microphoneOn ? "Mute microphone" : "Unmute microphone"} active={microphoneOn} onClick={() => void toggleMicrophone()}>{microphoneOn ? <Mic /> : <MicOff />}</ControlButton><ControlButton label={cameraOn ? "Turn camera off" : "Turn camera on"} active={cameraOn} onClick={() => void toggleCamera()}>{cameraOn ? <Camera /> : <CameraOff />}</ControlButton><ControlButton label={screenShareOn ? "Stop sharing screen" : "Share screen"} active={screenShareOn} onClick={() => void toggleScreenShare()}>{screenShareOn ? <MonitorUp /> : <MonitorUp />}</ControlButton><ControlButton label={handRaised ? "Lower hand" : "Raise hand"} active={handRaised} onClick={() => void toggleHand()}>{<Hand />}</ControlButton><ControlButton label={chatOpen ? "Close class chat" : "Open class chat"} active={chatOpen} onClick={() => setChatOpen((value) => !value)}><MessageCircle /></ControlButton><ControlButton label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"} active={fullscreen} onClick={() => void toggleFullscreen()}><Expand /></ControlButton><Button type="button" variant="destructive" className="ml-2 rounded-xl" onClick={endCall}><PhoneOff data-icon="inline-start" />End call</Button></div>
