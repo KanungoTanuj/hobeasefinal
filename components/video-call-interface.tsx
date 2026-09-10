@@ -104,7 +104,7 @@ function InCallChat({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
   if (!isOpen) return null
 
   return (
-    <aside className="flex min-h-0 w-full flex-col border-t border-border bg-card md:w-80 md:border-l md:border-t-0" aria-label="In-call chat">
+    <aside className="flex min-h-0 w-full flex-col border-t border-border bg-card text-foreground md:w-80 md:border-l md:border-t-0" aria-label="In-call chat">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div>
           <p className="text-sm font-semibold">Class chat</p>
@@ -117,7 +117,7 @@ function InCallChat({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
       </div>
       <div className="border-t border-border p-3">
         <div className="flex items-center gap-2 rounded-xl border border-input bg-background px-2 py-1">
-          <input value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.nativeEvent.isComposing && event.keyCode !== 229) void sendMessage() }} placeholder="Message the class" aria-label="Message the class" className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm outline-none" />
+          <input value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.nativeEvent.isComposing && event.keyCode !== 229) void sendMessage() }} placeholder="Message the class" aria-label="Message the class" className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
           <Button type="button" size="icon" onClick={() => void sendMessage()} disabled={!draft.trim()} aria-label="Send class message"><Send /></Button>
         </div>
       </div>
@@ -125,9 +125,16 @@ function InCallChat({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
   )
 }
 
-function ParticipantStage() {
+function ParticipantStage({ raisedHands }: { raisedHands: string[] }) {
   const tracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: true }, { source: Track.Source.ScreenShare, withPlaceholder: true }], { onlySubscribed: false })
-  return <div className="grid min-h-0 flex-1 auto-rows-fr grid-cols-1 gap-3 overflow-auto bg-[#18232c] p-3 md:grid-cols-2 md:p-5">{tracks.length > 0 ? tracks.map((track) => <ParticipantTile key={`${track.participant.identity}-${track.source}`} trackRef={track} className="min-h-0 overflow-hidden rounded-2xl border border-white/10 bg-[#243642] shadow-xl" />) : <div className="col-span-full flex min-h-64 items-center justify-center rounded-2xl border border-dashed border-white/15 text-center text-white/70"><div><Video className="mx-auto mb-2 size-8" /><p className="text-sm font-medium">Your classroom is ready</p><p className="mt-1 text-xs text-white/50">Turn on your camera or share your screen to begin.</p></div></div>}</div>
+  return <div className="grid min-h-0 flex-1 auto-rows-fr grid-cols-1 gap-3 overflow-auto bg-[#18232c] p-3 md:grid-cols-2 md:p-5">{tracks.length > 0 ? tracks.map((track) => {
+    const participantName = getParticipantName(track.participant)
+    const isHandRaised = raisedHands.includes(track.participant.identity)
+    return <div key={`${track.participant.identity}-${track.source}`} className="relative min-h-0 overflow-hidden rounded-2xl border border-white/10 bg-[#243642] shadow-xl">
+      {isHandRaised && <div className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-lg"><Hand className="size-3.5" />{participantName} raised a hand</div>}
+      <ParticipantTile trackRef={track} className="size-full overflow-hidden" />
+    </div>
+  }) : <div className="col-span-full flex min-h-64 items-center justify-center rounded-2xl border border-dashed border-white/15 text-center text-white/70"><div><Video className="mx-auto mb-2 size-8" /><p className="text-sm font-medium">Your classroom is ready</p><p className="mt-1 text-xs text-white/50">Turn on your camera or share your screen to begin.</p></div></div>}</div>
 }
 
 function LiveRoom({ userRole, onEndCall }: { userRole: "teacher" | "learner"; onEndCall: () => void }) {
@@ -196,8 +203,8 @@ function LiveRoom({ userRole, onEndCall }: { userRole: "teacher" | "learner"; on
   const endCall = async () => { await room.disconnect(); onEndCall() }
 
   return <div ref={stageRef} className="flex min-h-0 flex-1 flex-col bg-[#18232c] text-white">
-    <div className="flex shrink-0 items-center justify-between border-b border-white/10 bg-[#20313d] px-4 py-3"><div className="flex items-center gap-3"><div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground"><ShieldCheck className="size-4" /></div><div><p className="text-sm font-semibold">Hobease live classroom</p><p className="text-xs text-white/60">{connectionState === ConnectionState.Connected ? "Connected securely" : "Connecting securely"}</p></div></div><div className="flex items-center gap-2 text-xs text-white/60"><Users className="size-4" />{participants.length} connected{raisedHands.length > 0 && <span className="rounded-full bg-primary/20 px-2 py-1 text-primary">{raisedHands.length} hand{raisedHands.length === 1 ? "" : "s"} raised</span>}</div></div>
-    <div className="flex min-h-0 flex-1 flex-col md:flex-row"><ParticipantStage /><InCallChat isOpen={chatOpen} onClose={() => setChatOpen(false)} /></div>
+    <div className="flex shrink-0 items-center justify-between border-b border-white/10 bg-[#20313d] px-4 py-3"><div className="flex items-center gap-3"><div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground"><ShieldCheck className="size-4" /></div><div><p className="text-sm font-semibold">Hobease live classroom</p><p className="text-xs text-white/60">{connectionState === ConnectionState.Connected ? "Connected securely" : "Connecting securely"}</p></div></div><div className="flex max-w-[60%] flex-wrap items-center justify-end gap-2 text-xs text-white/60"><span className="flex items-center gap-1.5"><Users className="size-4" />{participants.length} connected</span><div className="hidden items-center gap-1.5 sm:flex">{participants.map((participant) => <span key={participant.identity} className="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-white/75">{getParticipantName(participant)}</span>)}</div>{raisedHands.length > 0 && <span className="rounded-full bg-primary/20 px-2 py-1 text-primary">{raisedHands.length} hand{raisedHands.length === 1 ? "" : "s"} raised</span>}</div></div>
+    <div className="flex min-h-0 flex-1 flex-col md:flex-row"><ParticipantStage raisedHands={raisedHands} /><InCallChat isOpen={chatOpen} onClose={() => setChatOpen(false)} /></div>
     <div className="flex shrink-0 flex-wrap items-center justify-center gap-2 border-t border-white/10 bg-[#20313d] px-3 py-3 md:gap-3"><ControlButton label={microphoneOn ? "Mute microphone" : "Unmute microphone"} active={microphoneOn} onClick={() => void toggleMicrophone()}>{microphoneOn ? <Mic /> : <MicOff />}</ControlButton><ControlButton label={cameraOn ? "Turn camera off" : "Turn camera on"} active={cameraOn} onClick={() => void toggleCamera()}>{cameraOn ? <Camera /> : <CameraOff />}</ControlButton><ControlButton label={screenShareOn ? "Stop sharing screen" : "Share screen"} active={screenShareOn} onClick={() => void toggleScreenShare()}>{screenShareOn ? <MonitorUp /> : <MonitorUp />}</ControlButton><ControlButton label={handRaised ? "Lower hand" : "Raise hand"} active={handRaised} onClick={() => void toggleHand()}>{<Hand />}</ControlButton><ControlButton label={chatOpen ? "Close class chat" : "Open class chat"} active={chatOpen} onClick={() => setChatOpen((value) => !value)}><MessageCircle /></ControlButton><ControlButton label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"} active={fullscreen} onClick={() => void toggleFullscreen()}><Expand /></ControlButton><Button type="button" variant="destructive" className="ml-2 rounded-xl" onClick={endCall}><PhoneOff data-icon="inline-start" />End call</Button></div>
   </div>
 }
