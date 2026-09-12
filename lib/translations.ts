@@ -119,9 +119,6 @@ const fallbackTranslations: Record<Language, Record<string, string>> = {
   },
 }
 
-// Google Translate API endpoint (you can also use other services like DeepL, Azure Translator, etc.)
-const TRANSLATE_API_URL = "https://api.mymemory.translated.net/get"
-
 export async function translateText(text: string, targetLanguage: Language): Promise<string> {
   // Return original text if target language is English
   if (targetLanguage === "en") {
@@ -142,37 +139,19 @@ export async function translateText(text: string, targetLanguage: Language): Pro
     return fallbackText
   }
 
-  console.warn(`Translation not available for "${text}" in ${targetLanguage}, using original text`)
-  translationCache.set(cacheKey, text)
-  return text
-
-  /*
   try {
-    // Using MyMemory Translation API (free tier available)
-    const response = await fetch(`${TRANSLATE_API_URL}?q=${encodeURIComponent(text)}&langpair=en|${targetLanguage}`)
-
-    if (!response.ok) {
-      throw new Error("Translation API request failed")
-    }
-
+    const response = await fetch("/api/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, targetLanguage }),
+    })
     const data = await response.json()
-
-    if (data.responseStatus === 403 || data.matches?.[0]?.match < 0.3) {
-      console.warn("Translation API rate limit reached, using fallback")
-      return fallbackTranslations[targetLanguage][text] || text
-    }
-
-    const translatedText = data.responseData?.translatedText || text
-
-    // Cache the translation
+    const translatedText = data.translatedText || text
     translationCache.set(cacheKey, translatedText)
-
     return translatedText
-  } catch (error) {
-    console.error("Translation error:", error)
-    return fallbackTranslations[targetLanguage][text] || text
+  } catch {
+    return text
   }
-  */
 }
 
 // Hook for using translations in components
