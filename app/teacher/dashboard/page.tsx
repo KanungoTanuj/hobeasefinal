@@ -993,6 +993,13 @@ export default function TeacherDashboard() {
             onEndCall={handleCallEnd}
             isOpen={isVideoCallOpen}
             onClose={handleCallEnd}
+            booking={{
+              ...selectedBookingForCall,
+              teacher_name: teacher?.name || "Teacher",
+              teacher_skill: selectedBookingForCall.teacher_skill,
+            }}
+            currentUserId={user?.id || ""}
+            currentUserEmail={user?.email || ""}
           />
         )}
       </div>

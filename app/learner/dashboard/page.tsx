@@ -947,6 +947,9 @@ export default function LearnerDashboard() {
           onEndCall={handleCallEnd}
           isOpen={isVideoCallOpen}
           onClose={handleCallEnd}
+          booking={selectedBookingForCall}
+          currentUserId={user?.id || ""}
+          currentUserEmail={user?.email || ""}
         />
       )}
     </div>
