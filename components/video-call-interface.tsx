@@ -13,6 +13,7 @@ import {
 } from "@livekit/components-react"
 import { ConnectionState, RoomEvent, Track, type Participant } from "livekit-client"
 import { Button } from "@/components/ui/button"
+import { ChatInterface } from "@/components/chat-interface"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
@@ -44,6 +45,18 @@ interface VideoCallInterfaceProps {
   onEndCall: () => void
   isOpen: boolean
   onClose: () => void
+  booking: {
+    id: string
+    learner_name: string
+    learner_email: string
+    teacher_name: string
+    teacher_skill: string
+    booking_date: string
+    booking_time: string
+    status: string
+  }
+  currentUserId: string
+  currentUserEmail: string
 }
 
 type RoomChatMessage = { id: string; sender: string; text: string; sentAt: string }
@@ -81,7 +94,12 @@ function ControlButton({ label, active, children, onClick, disabled }: { label: 
   )
 }
 
-function InCallChat({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+function InCallChat({ isOpen, onClose, booking, currentUserId, currentUserRole, currentUserEmail }: { isOpen: boolean; onClose: () => void; booking: VideoCallInterfaceProps["booking"]; currentUserId: string; currentUserRole: "teacher" | "learner"; currentUserEmail: string }) {
+  return isOpen ? <ChatInterface booking={booking} currentUserId={currentUserId} currentUserRole={currentUserRole} currentUserEmail={currentUserEmail} onClose={onClose} /> : null
+}
+
+/* Legacy LiveKit chat is intentionally unused; persistent Supabase messages power classroom chat. */
+function LegacyInCallChat({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const room = useRoomContext()
   const { localParticipant } = useLocalParticipant()
   const [messages, setMessages] = useState<RoomChatMessage[]>([])
@@ -152,7 +170,7 @@ function ParticipantStage({ raisedHands }: { raisedHands: string[] }) {
   }) : <div className="flex min-h-64 items-center justify-center rounded-2xl border border-dashed border-white/15 text-center text-white/70"><div><Video className="mx-auto mb-2 size-8" /><p className="text-sm font-medium">Your classroom is ready</p><p className="mt-1 text-xs text-white/50">Turn on your camera or share your screen to begin.</p></div></div>}</div></div>
 }
 
-function LiveRoom({ userRole, onEndCall }: { userRole: "teacher" | "learner"; onEndCall: () => void }) {
+function LiveRoom({ userRole, onEndCall, booking, currentUserId, currentUserEmail }: { userRole: "teacher" | "learner"; onEndCall: () => void; booking: VideoCallInterfaceProps["booking"]; currentUserId: string; currentUserEmail: string }) {
   const room = useRoomContext()
   const participants = useParticipants()
   const { localParticipant } = useLocalParticipant()
@@ -272,12 +290,12 @@ function LiveRoom({ userRole, onEndCall }: { userRole: "teacher" | "learner"; on
     <RoomAudioRenderer />
     {!audioReady && <div className="absolute inset-x-3 top-16 z-30 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#20313d]/95 px-4 py-3 text-sm shadow-2xl backdrop-blur-md sm:inset-x-auto sm:right-4 sm:max-w-sm"><div><p className="font-semibold">Enable class audio</p><p className="mt-0.5 text-xs text-white/60">Mobile browsers need one tap before remote audio can play.</p>{audioError && <p className="mt-1 text-xs text-primary">{audioError}</p>}</div><Button type="button" size="sm" onClick={() => void enableAudio()}>Enable</Button></div>}
     <div className="flex shrink-0 items-center justify-between border-b border-white/10 bg-[#20313d] px-4 py-3"><div className="flex items-center gap-3"><div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground"><ShieldCheck className="size-4" /></div><div><p className="text-sm font-semibold">Hobease live classroom</p><p className="text-xs text-white/60">{connectionState === ConnectionState.Connected ? "Connected securely" : "Connecting securely"}</p></div></div><div className="flex max-w-[60%] flex-wrap items-center justify-end gap-2 text-xs text-white/60"><span className="flex items-center gap-1.5"><Users className="size-4" />{participants.length} connected</span><div className="hidden items-center gap-1.5 sm:flex">{participants.map((participant) => <span key={participant.identity} className="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-white/75">{getParticipantName(participant)}</span>)}</div>{raisedHands.length > 0 && <span className="rounded-full bg-primary/20 px-2 py-1 text-primary">{raisedHands.length} hand{raisedHands.length === 1 ? "" : "s"} raised</span>}</div></div>
-    <div className="relative flex min-h-0 flex-1 flex-col md:flex-row"><ParticipantStage raisedHands={raisedHands} /><div className={cn("absolute inset-x-0 bottom-0 top-0 z-20 flex min-h-0 flex-col shadow-2xl transition-transform md:static md:z-auto md:w-80 md:shrink-0 md:translate-x-0", chatOpen ? "translate-x-0" : "translate-x-full md:hidden")}><InCallChat isOpen={chatOpen} onClose={() => setChatOpen(false)} /></div></div>
+    <div className="relative flex min-h-0 flex-1 flex-col md:flex-row"><ParticipantStage raisedHands={raisedHands} /><div className={cn("absolute inset-x-0 bottom-0 top-0 z-20 flex min-h-0 flex-col shadow-2xl transition-transform md:static md:z-auto md:w-80 md:shrink-0 md:translate-x-0", chatOpen ? "translate-x-0" : "translate-x-full md:hidden")}><InCallChat isOpen={chatOpen} onClose={() => setChatOpen(false)} booking={booking} currentUserId={currentUserId} currentUserRole={userRole} currentUserEmail={currentUserEmail} /></div></div>
     <div className="flex shrink-0 flex-wrap items-center justify-center gap-2 border-t border-white/10 bg-[#20313d] px-3 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] md:gap-3"><ControlButton label={microphoneOn ? "Mute microphone" : "Unmute microphone"} active={microphoneOn} onClick={() => void toggleMicrophone()}>{microphoneOn ? <Mic /> : <MicOff />}</ControlButton><ControlButton label={cameraOn ? "Turn camera off" : "Turn camera on"} active={cameraOn} onClick={() => void toggleCamera()}>{cameraOn ? <Camera /> : <CameraOff />}</ControlButton><ControlButton label={screenShareOn ? "Stop sharing screen" : "Share screen"} active={screenShareOn} onClick={() => void toggleScreenShare()}>{screenShareOn ? <MonitorUp /> : <MonitorUp />}</ControlButton><ControlButton label={handRaised ? "Lower hand" : "Raise hand"} active={handRaised} onClick={() => void toggleHand()}>{<Hand />}</ControlButton><ControlButton label={chatOpen ? "Close class chat" : "Open class chat"} active={chatOpen} onClick={() => setChatOpen((value) => !value)}><MessageCircle /></ControlButton><ControlButton label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"} active={fullscreen} onClick={() => void toggleFullscreen()}><Expand /></ControlButton><Button type="button" variant="destructive" className="ml-2 rounded-xl" onClick={endCall}><PhoneOff data-icon="inline-start" />End call</Button></div>
   </div>
 }
 
-export function VideoCallInterface({ roomId, classId, userName, userRole, onEndCall, isOpen, onClose }: VideoCallInterfaceProps) {
+export function VideoCallInterface({ roomId, classId, userName, userRole, onEndCall, isOpen, onClose, booking, currentUserId, currentUserEmail }: VideoCallInterfaceProps) {
   const [token, setToken] = useState("")
   const [serverUrl, setServerUrl] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -290,5 +308,5 @@ export function VideoCallInterface({ roomId, classId, userName, userRole, onEndC
     fetch("/api/video/create-room", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ roomId, classId, userName, userRole }) }).then(async (response) => { const data = await response.json(); if (!response.ok) throw new Error(data.error || "Unable to connect to the video call"); if (!cancelled) { setToken(data.token); setServerUrl(data.serverUrl) } }).catch((reason: Error) => { if (!cancelled) setError(reason.message) }).finally(() => { if (!cancelled) setIsLoading(false) })
     return () => { cancelled = true }
   }, [classId, isOpen, roomId, userName, userRole])
-  return <Dialog open={isOpen} onOpenChange={onClose}><DialogContent className="h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-none gap-0 overflow-hidden p-0 md:h-[min(95dvh,860px)] md:max-h-[95dvh] md:w-[min(95dvw,1280px)] md:max-w-[1280px] md:rounded-2xl"><Card className="flex h-full min-h-0 w-full flex-col rounded-none border-0 md:rounded-2xl"><CardHeader className="flex shrink-0 flex-row items-center justify-between border-b px-4 py-3 md:px-6"><div><CardTitle className="text-base">{userRole === "teacher" ? "Teaching session" : "Learning session"}</CardTitle><p className="mt-1 text-xs text-muted-foreground">Private Hobease classroom</p></div><Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Close video call"><X /></Button></CardHeader><CardContent className="min-h-0 flex-1 overflow-hidden p-0">{isLoading && <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Setting up secure video call...</div>}{error && <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-sm text-destructive"><p>{error}</p><Button type="button" variant="outline" onClick={onClose}>Close</Button></div>}{token && serverUrl && <LiveKitRoom token={token} serverUrl={serverUrl} connect audio video className="h-full"><LiveRoom userRole={userRole} onEndCall={handleEndCall} /></LiveKitRoom>}</CardContent></Card></DialogContent></Dialog>
+  return <Dialog open={isOpen} onOpenChange={onClose}><DialogContent className="h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-none gap-0 overflow-hidden p-0 md:h-[min(95dvh,860px)] md:max-h-[95dvh] md:w-[min(95dvw,1280px)] md:max-w-[1280px] md:rounded-2xl"><Card className="flex h-full min-h-0 w-full flex-col rounded-none border-0 md:rounded-2xl"><CardHeader className="flex shrink-0 flex-row items-center justify-between border-b px-4 py-3 md:px-6"><div><CardTitle className="text-base">{userRole === "teacher" ? "Teaching session" : "Learning session"}</CardTitle><p className="mt-1 text-xs text-muted-foreground">Private Hobease classroom</p></div><Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Close video call"><X /></Button></CardHeader><CardContent className="min-h-0 flex-1 overflow-hidden p-0">{isLoading && <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Setting up secure video call...</div>}{error && <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-sm text-destructive"><p>{error}</p><Button type="button" variant="outline" onClick={onClose}>Close</Button></div>}{token && serverUrl && <LiveKitRoom token={token} serverUrl={serverUrl} connect audio video className="h-full"><LiveRoom userRole={userRole} onEndCall={handleEndCall} booking={booking} currentUserId={currentUserId} currentUserEmail={currentUserEmail} /></LiveKitRoom>}</CardContent></Card></DialogContent></Dialog>
 }

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ChevronDown, Globe } from "lucide-react"
 import { languageNames, type Language } from "@/lib/translations"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 
 interface LanguageSelectorProps {
   currentLanguage: Language
@@ -11,28 +11,7 @@ interface LanguageSelectorProps {
 }
 
 export default function LanguageSelector({ currentLanguage, onLanguageChange }: LanguageSelectorProps) {
-  const [languageText, setLanguageText] = useState("Language")
-
-  useEffect(() => {
-    const translateLanguageText = async () => {
-      if (currentLanguage === "en") {
-        setLanguageText("Language")
-      } else {
-        try {
-          const response = await fetch(
-            `https://api.mymemory.translated.net/get?q=${encodeURIComponent("Language")}&langpair=en|${currentLanguage}`,
-          )
-          const data = await response.json()
-          setLanguageText(data.responseData?.translatedText || "Language")
-        } catch (error) {
-          console.error("Translation error:", error)
-          setLanguageText("Language")
-        }
-      }
-    }
-
-    translateLanguageText()
-  }, [currentLanguage])
+  const [languageText] = useState("Language")
 
   return (
     <DropdownMenu>

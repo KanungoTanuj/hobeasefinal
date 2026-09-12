@@ -151,16 +151,34 @@ export default function TeacherDashboard() {
 
       const supabase = createClientComponentClient()
 
-      const { data: teacherData, error: teacherError } = await supabase
+      const teacherColumns = "id, name, email, skill, experience, bio, photo_url"
+      const { data: teacherByAuthId, error: authLookupError } = await supabase
         .from("Teachers")
-        .select("id, name, email, skill, experience, bio, photo_url")
-        .eq("email", email)
-        .limit(1)
-        .single()
+        .select(teacherColumns)
+        .eq("auth_id", user?.id ?? "")
+        .maybeSingle()
 
-      console.log("[v0] Teacher query result:", { data: teacherData, error: teacherError })
+      const { data: teacherByEmail, error: emailLookupError } = teacherByAuthId
+        ? { data: null, error: null }
+        : await supabase
+            .from("Teachers")
+            .select(teacherColumns)
+            .eq("email", email)
+            .limit(1)
+            .maybeSingle()
 
-      if (teacherError) {
+      const teacherData = teacherByAuthId ?? teacherByEmail
+      const teacherError = teacherData
+        ? null
+        : authLookupError ?? emailLookupError ?? new Error("Teacher profile not found")
+
+      console.log("[v0] Teacher query result:", {
+        data: teacherData,
+        authLookupError,
+        emailLookupError,
+      })
+
+      if (teacherError || !teacherData) {
         console.error("Error fetching teacher:", teacherError)
         router.push("/")
         return
@@ -975,6 +993,13 @@ export default function TeacherDashboard() {
             onEndCall={handleCallEnd}
             isOpen={isVideoCallOpen}
             onClose={handleCallEnd}
+            booking={{
+              ...selectedBookingForCall,
+              teacher_name: teacher?.name || "Teacher",
+              teacher_skill: selectedBookingForCall.teacher_skill,
+            }}
+            currentUserId={user?.id || ""}
+            currentUserEmail={user?.email || ""}
           />
         )}
       </div>
