@@ -31,12 +31,28 @@ ALTER TABLE public.teacher_skills ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Anyone can view teacher skills" ON public.teacher_skills
 FOR SELECT USING (true);
 
+-- Match the authenticated Supabase user to the teacher record by auth_id.
+-- Keep the normalized email fallback for legacy teacher rows.
 CREATE POLICY "Teachers can manage their own skills" ON public.teacher_skills
-FOR ALL USING (
+FOR ALL TO authenticated
+USING (
     EXISTS (
-        SELECT 1 FROM "Teachers" t 
-        WHERE t.id = teacher_skills.teacher_id 
-        AND t.email = auth.jwt() ->> 'email'
+        SELECT 1 FROM public."Teachers" t
+        WHERE t.id = teacher_skills.teacher_id
+          AND (
+            t.auth_id = (SELECT auth.uid())
+            OR lower(trim(t.email)) = lower(trim((SELECT auth.jwt() ->> 'email')))
+          )
+    )
+)
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM public."Teachers" t
+        WHERE t.id = teacher_skills.teacher_id
+          AND (
+            t.auth_id = (SELECT auth.uid())
+            OR lower(trim(t.email)) = lower(trim((SELECT auth.jwt() ->> 'email')))
+          )
     )
 );
 
