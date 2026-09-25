@@ -15,12 +15,31 @@ export async function POST(request: Request) {
 
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
-      .select("id, status")
+      .select("id, status, teacher_id")
       .eq("id", bookingId)
       .eq("teacher_id", teacher.id)
       .single()
     if (bookingError || !booking) return NextResponse.json({ error: "Booking not found or unauthorized" }, { status: 404 })
-    if (booking.status !== "awaiting_completion") return NextResponse.json({ error: "This class is not ready for completion" }, { status: 409 })
+
+    const { data: activeClass, error: classError } = await supabase
+      .from("classes")
+      .select("id, end_time, teacher_id")
+      .eq("booking_id", booking.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    console.log("[v0] Teacher completion validation", {
+      bookingId: booking.id,
+      bookingStatus: booking.status,
+      classId: activeClass?.id ?? null,
+      classEndTime: activeClass?.end_time ?? null,
+      teacherAuthId: activeClass?.teacher_id ?? null,
+      authenticatedUserId: session.user.id,
+      classLookupError: classError?.message ?? null,
+    })
+
+    const normalizedStatus = typeof booking.status === "string" ? booking.status.trim().toLowerCase() : booking.status
+    if (normalizedStatus !== "awaiting_completion") return NextResponse.json({ error: "This class is not ready for completion" }, { status: 409 })
 
     const { error } = await supabase.rpc("confirm_booking_completion_as_teacher", { p_booking_id: bookingId })
     if (error) {

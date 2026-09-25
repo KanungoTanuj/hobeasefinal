@@ -353,12 +353,16 @@ export default function TeacherDashboard() {
     }
   }
 
-  const handleCallEnd = () => {
+  const handleCallClose = () => {
     setIsVideoCallOpen(false)
-    setBookings((currentBookings) => currentBookings.map((booking) => booking.id === selectedBookingForCall?.id ? { ...booking, status: "awaiting_completion" } : booking))
     setSelectedBookingForCall(null)
     setActiveClassId(null)
     setActiveRoomId(null)
+  }
+
+  const handleCallEnd = () => {
+    handleCallClose()
+    setBookings((currentBookings) => currentBookings.map((booking) => booking.id === selectedBookingForCall?.id ? { ...booking, status: "awaiting_completion" } : booking))
   }
 
   const handleConfirmCompletion = async (booking: Booking) => {
@@ -372,6 +376,7 @@ export default function TeacherDashboard() {
       alert(data.error)
       return
     }
+    const supabase = createClientComponentClient()
     const { data } = await supabase.from("bookings").select("*").eq("id", booking.id).single()
     setBookings((current) => current.map((item) => item.id === booking.id ? { ...item, ...(data || {}) } : item))
   }
@@ -1019,9 +1024,9 @@ export default function TeacherDashboard() {
             classId={activeClassId}
             userName={teacher?.name || "Teacher"}
             userRole="teacher"
-            onEndCall={handleCallEnd}
-            isOpen={isVideoCallOpen}
-            onClose={handleCallEnd}
+          onEndCall={handleCallEnd}
+          isOpen={isVideoCallOpen}
+          onClose={handleCallClose}
             booking={{
               ...selectedBookingForCall,
               teacher_name: teacher?.name || "Teacher",
