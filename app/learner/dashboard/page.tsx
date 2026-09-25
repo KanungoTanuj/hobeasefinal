@@ -228,7 +228,6 @@ export default function LearnerDashboard() {
           ...booking,
           status: typeof booking.status === "string" ? booking.status.trim().toLowerCase() : booking.status,
         })) as Booking[]
-        console.log("[v0] Learner booking lifecycle", normalizedBookings.map((booking) => ({ id: booking.id, status: booking.status })))
         setBookings(normalizedBookings)
 
         // Calculate total spent
@@ -669,10 +668,21 @@ export default function LearnerDashboard() {
                                     ₹{booking.price_per_hour}
                                   </p>
                                   <Badge variant="secondary" className="text-xs">
-                                    {booking.status === "awaiting_completion" ? "Awaiting Your Confirmation" : booking.status === "in_progress" ? "In Progress" : booking.status === "confirmed" ? "Confirmed" : "Pending"}
+                                    {booking.status === "awaiting_completion"
+                                      ? booking.learner_confirmed
+                                        ? "Awaiting Teacher Confirmation"
+                                        : "Awaiting Your Confirmation"
+                                      : booking.status === "in_progress"
+                                        ? "In Progress"
+                                        : booking.status === "confirmed"
+                                          ? "Confirmed"
+                                          : "Pending"}
                                   </Badge>
                                   {booking.status === "awaiting_completion" && booking.learner_confirmed && (
                                     <p className="mt-1 text-xs text-muted-foreground">You have confirmed. Waiting for the teacher.</p>
+                                  )}
+                                  {booking.status === "awaiting_completion" && !booking.learner_confirmed && booking.teacher_confirmed && (
+                                    <p className="mt-1 text-xs text-muted-foreground">Teacher has confirmed.</p>
                                   )}
                                 </div>
                                 <div className="flex gap-2">
@@ -696,9 +706,9 @@ export default function LearnerDashboard() {
     {classStatuses[booking.id] ? "Join Class" : "Join Class (Not Started)"}
   </Button>
 )}
-                                  {booking.status === "awaiting_completion" && (
+                                  {booking.status === "awaiting_completion" && !booking.learner_confirmed && (
                                     <Button size="sm" onClick={() => void handleConfirmCompletion(booking)} className="text-xs bg-[#00B9D9] hover:bg-[#009ab5]">
-                                      Confirm Completion
+                                      Confirm Complete
                                     </Button>
                                   )}
                                   {(["confirmed", "pending", "in_progress", "awaiting_completion", "completed"].includes(booking.status)) && (

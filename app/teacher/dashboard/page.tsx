@@ -864,7 +864,8 @@ export default function TeacherDashboard() {
                                     Confirm Complete
                                   </Button>
                                 )}
-                                {booking.teacher_confirmed && <span className="text-xs text-muted-foreground">You have confirmed. Waiting for learner.</span>}
+                                {booking.teacher_confirmed && <span className="text-xs text-muted-foreground">Awaiting learner confirmation</span>}
+                                {!booking.teacher_confirmed && booking.learner_confirmed && <span className="text-xs text-muted-foreground">Learner has confirmed.</span>}
                               </div>
                             )}
                             {(booking.status === "confirmed" || booking.status === "pending") && (
