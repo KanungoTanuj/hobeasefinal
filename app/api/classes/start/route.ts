@@ -94,23 +94,29 @@ export async function POST(request: Request) {
     const roomId = `${booking.teacher_name.replace(/\s+/g, "-")}-${booking.learner_name.replace(/\s+/g, "-")}-${Date.now()}`
     console.log("[v0] Generated room ID:", roomId)
 
-    // Keep the learner table ID separate from the authenticated user's ID.
-    const studentIdBeingInserted = booking.learner_id
-
-    // Create new class
+    // `classes.student_id` references `learners.id`, not the learner's auth user ID.
     const classData = {
       teacher_id: booking.teacher_id,
-      student_id: studentIdBeingInserted,
+      student_id: booking.learner_id,
       booking_id: booking.id,
       room_id: roomId,
       start_time: new Date().toISOString(),
     }
 
-    console.log("[v0] Class insert diagnostics:", {
+    if (classData.student_id !== booking.learner_id) {
+      console.error("[v0] FATAL ID MAPPING ERROR", {
+        bookingId: booking.id,
+        bookingLearnerId: booking.learner_id,
+        studentIdBeingInserted: classData.student_id,
+      })
+
+      return NextResponse.json({ error: "Invalid class student ID mapping" }, { status: 500 })
+    }
+
+    console.log("[v0] FINAL CLASS INSERT", {
       bookingId: booking.id,
       bookingLearnerId: booking.learner_id,
-      bookingTeacherId: booking.teacher_id,
-      studentIdBeingInserted,
+      studentIdBeingInserted: classData.student_id,
       teacherIdBeingInserted: classData.teacher_id,
     })
 
