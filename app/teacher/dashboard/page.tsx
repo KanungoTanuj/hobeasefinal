@@ -80,6 +80,8 @@ interface Booking {
   status: string
   price_per_hour: number
   teacher_skill: string
+  teacher_confirmed?: boolean
+  learner_confirmed?: boolean
 }
 
 export default function TeacherDashboard() {
@@ -357,6 +359,21 @@ export default function TeacherDashboard() {
     setSelectedBookingForCall(null)
     setActiveClassId(null)
     setActiveRoomId(null)
+  }
+
+  const handleConfirmCompletion = async (booking: Booking) => {
+    const response = await fetch("/api/bookings/confirm-teacher-completion", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingId: booking.id }),
+    })
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({ error: "Unable to confirm completion" }))
+      alert(data.error)
+      return
+    }
+    const { data } = await supabase.from("bookings").select("*").eq("id", booking.id).single()
+    setBookings((current) => current.map((item) => item.id === booking.id ? { ...item, ...(data || {}) } : item))
   }
 
   const getProfileCompletion = () => {
@@ -828,6 +845,17 @@ export default function TeacherDashboard() {
                             <p className="text-sm font-medium mb-2">₹{booking.price_per_hour}/hr</p>
                           </div>
                           <div className="flex gap-2">
+                            {booking.status === "awaiting_completion" && (
+                              <div className="flex flex-col items-end gap-1">
+                                <span className="text-xs text-muted-foreground">Awaiting Completion</span>
+                                {!booking.teacher_confirmed && (
+                                  <Button size="sm" onClick={() => void handleConfirmCompletion(booking)} className="text-xs bg-[#00B9D9] hover:bg-[#009ab5]">
+                                    Confirm Complete
+                                  </Button>
+                                )}
+                                {booking.teacher_confirmed && <span className="text-xs text-muted-foreground">You have confirmed. Waiting for learner.</span>}
+                              </div>
+                            )}
                             {(booking.status === "confirmed" || booking.status === "pending") && (
                               <Button
                                 size="sm"

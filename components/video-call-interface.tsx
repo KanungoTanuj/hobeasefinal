@@ -307,6 +307,13 @@ export function VideoCallInterface({ roomId, classId, userName, userRole, onEndC
   }, [isOpen])
 
   const handleEndCall = async () => {
+    // Leaving a room is not the same as ending the class. Only teachers may
+    // transition the booking through the teacher-only endpoint.
+    if (userRole === "learner") {
+      onEndCall()
+      onClose()
+      return
+    }
     if (endRequestStartedRef.current) return
     endRequestStartedRef.current = true
 

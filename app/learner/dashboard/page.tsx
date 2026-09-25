@@ -48,6 +48,8 @@ interface Booking {
   price_per_hour: number
   created_at: string
   updated_at: string
+  teacher_confirmed?: boolean
+  learner_confirmed?: boolean
   teacher: {
     name: string
     skill: string
@@ -328,7 +330,7 @@ export default function LearnerDashboard() {
       alert(data.error)
       return
     }
-    setBookings((current) => current.map((item) => item.id === booking.id ? { ...item, status: "completed" } : item))
+    await fetchLearnerData(user?.email || booking.learner_email)
   }
 
   const handleCallEnd = () => {
@@ -407,7 +409,7 @@ export default function LearnerDashboard() {
     )
   }
 
-  const upcomingBookings = bookings.filter((b) => b.status === "confirmed" || b.status === "pending")
+  const upcomingBookings = bookings.filter((b) => ["confirmed", "pending", "in_progress", "awaiting_completion"].includes(b.status))
   const completedBookings = bookings.filter((b) => b.status === "completed")
 
   console.log("[v0] Total bookings:", bookings.length)
@@ -662,8 +664,11 @@ export default function LearnerDashboard() {
                                     ₹{booking.price_per_hour}
                                   </p>
                                   <Badge variant="secondary" className="text-xs">
-                                    {booking.status === "confirmed" ? "Confirmed" : "Pending"}
+                                    {booking.status === "awaiting_completion" ? "Awaiting Your Confirmation" : booking.status === "in_progress" ? "In Progress" : booking.status === "confirmed" ? "Confirmed" : "Pending"}
                                   </Badge>
+                                  {booking.status === "awaiting_completion" && booking.learner_confirmed && (
+                                    <p className="mt-1 text-xs text-muted-foreground">You have confirmed. Waiting for the teacher.</p>
+                                  )}
                                 </div>
                                 <div className="flex gap-2">
                                   {["confirmed", "pending", "in_progress"].includes(booking.status) && (
