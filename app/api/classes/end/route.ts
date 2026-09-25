@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createServerComponentClient } from "@/lib/supabase"
 
 export async function POST(request: Request) {
   try {
@@ -9,13 +9,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Booking ID is required" }, { status: 400 })
     }
 
+    const supabase = await createServerComponentClient()
+
     const {
       data: { user },
-      error: authError,
+      error,
     } = await supabase.auth.getUser()
 
-    if (authError || !user) {
-      console.error("[v0] End class auth lookup failed", { message: authError?.message ?? "No authenticated user" })
+    console.log("[v0] END CLASS AUTH RESULT", {
+      authenticatedUserId: user?.id ?? null,
+      authError: error?.message ?? null,
+    })
+
+    if (error || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
