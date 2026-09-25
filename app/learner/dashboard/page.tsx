@@ -671,42 +671,26 @@ export default function LearnerDashboard() {
                                   )}
                                 </div>
                                 <div className="flex gap-2">
-                                  {["confirmed", "pending", "in_progress"].includes(booking.status) && (
-                                    <Button
-                                      size="sm"
-                                      onClick={() => {
-                                        if (booking.status === "pending") {
-                                          alert(
-                                            "This booking needs to be confirmed first. Please wait for teacher confirmation.",
-                                          )
-                                          return
-                                        }
-                                        if (!classStatuses[booking.id]) {
-                                          alert(
-                                            "The teacher hasn't started the class yet. Please wait for them to start.",
-                                          )
-                                          return
-                                        }
-                                        handleJoinClass(booking)
-                                      }}
-                                      disabled={booking.status === "pending" || !classStatuses[booking.id]}
-                                      className="text-xs bg-green-600 hover:bg-green-700 disabled:opacity-50"
-                                      title={
-                                        booking.status === "pending"
-                                          ? "Waiting for confirmation"
-                                          : !classStatuses[booking.id]
-                                            ? "Waiting for teacher to start"
-                                            : "Join video class"
-                                      }
-                                    >
-                                      <Video className="h-3 w-3 mr-1" />
-                                      {booking.status === "pending"
-                                        ? "Join Class (Pending)"
-                                        : classStatuses[booking.id]
-                                          ? "Join Class"
-                                          : "Join Class (Not Started)"}
-                                    </Button>
-                                  )}
+{booking.status === "in_progress" && (
+  <Button
+    size="sm"
+    onClick={() => {
+      if (!classStatuses[booking.id]) {
+        alert(
+          "The teacher hasn't started the class yet. Please wait for them to start.",
+        )
+        return
+      }
+      handleJoinClass(booking)
+    }}
+    disabled={!classStatuses[booking.id]}
+    className="text-xs bg-green-600 hover:bg-green-700 disabled:opacity-50"
+    title={!classStatuses[booking.id] ? "Waiting for teacher to start" : "Join video class"}
+  >
+    <Video className="h-3 w-3 mr-1" />
+    {classStatuses[booking.id] ? "Join Class" : "Join Class (Not Started)"}
+  </Button>
+)}
                                   {booking.status === "awaiting_completion" && (
                                     <Button size="sm" onClick={() => void handleConfirmCompletion(booking)} className="text-xs bg-[#00B9D9] hover:bg-[#009ab5]">
                                       Confirm Completion
