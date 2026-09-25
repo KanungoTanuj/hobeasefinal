@@ -25,11 +25,17 @@ export default function ProfileSection() {
   useEffect(() => {
     // Get initial session
     const getSession = async () => {
-      const {
-        data: { session },
-      } = await getInitialSession()
-      setUser(session?.user ?? null)
-      setLoading(false)
+      try {
+        const {
+          data: { session },
+        } = await getInitialSession()
+        setUser(session?.user ?? null)
+      } catch (error) {
+        console.error("[v0] Profile header session initialization failed:", error)
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
     }
 
     getSession()
