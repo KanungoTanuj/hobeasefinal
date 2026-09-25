@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClientComponentClient } from "@/lib/supabase"
+import { createClientComponentClient, getInitialSession } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -110,20 +110,31 @@ export default function TeacherDashboard() {
   const isMobile = useIsMobile()
 
   useEffect(() => {
+    const timestamp = () => new Date().toISOString()
+    console.log(`[v0] [TEACHER] mount ${timestamp()}`)
     const checkAuth = async () => {
-      const supabase = createClientComponentClient()
+      console.log(`[v0] [TEACHER] getInitialSession START ${timestamp()}`)
+      try {
+        const {
+          data: { session },
+        } = await getInitialSession()
+        console.log(`[v0] [TEACHER] getInitialSession RESOLVED ${timestamp()}`)
+        console.log(`[v0] [TEACHER] session/user values ${timestamp()}`, { hasSession: Boolean(session), userId: session?.user?.id ?? null, email: session?.user?.email ?? null })
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+        if (!session?.user) {
+          router.push("/auth")
+          return
+        }
 
-      if (!session?.user) {
-        router.push("/auth")
-        return
+        setUser(session.user)
+        console.log(`[v0] [TEACHER] fetchTeacherData START ${timestamp()}`)
+        await fetchTeacherData(session.user.email!, session.user.id)
+      } catch (error) {
+        console.error(`[v0] [TEACHER] getInitialSession REJECTED ${timestamp()}`, error)
+      } finally {
+        console.log(`[v0] [TEACHER] getInitialSession FINALLY ${timestamp()}`)
+        setLoading(false)
       }
-
-      setUser(session.user)
-      await fetchTeacherData(session.user.email!)
     }
 
     checkAuth()
@@ -147,7 +158,7 @@ export default function TeacherDashboard() {
     return () => clearInterval(interval)
   }, [])
 
-  const fetchTeacherData = async (email: string) => {
+  const fetchTeacherData = async (email: string, authId?: string) => {
     try {
       console.log("[v0] Fetching teacher data for email:", email)
 
@@ -157,7 +168,7 @@ export default function TeacherDashboard() {
       const { data: teacherByAuthId, error: authLookupError } = await supabase
         .from("Teachers")
         .select(teacherColumns)
-        .eq("auth_id", user?.id ?? "")
+        .eq("auth_id", authId ?? "")
         .maybeSingle()
 
       const { data: teacherByEmail, error: emailLookupError } = teacherByAuthId
@@ -252,7 +263,7 @@ export default function TeacherDashboard() {
           learnerConfirmed: completion.learner_confirmed,
           status: bookings.find((booking) => booking.id === completion.booking_id)?.status,
         })
-        void fetchTeacherData(user.email!)
+        void fetchTeacherData(user.email!, user.id)
       })
       .subscribe()
     return () => { void supabase.removeChannel(channel) }
@@ -476,157 +487,43 @@ export default function TeacherDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-4 sm:py-8">
-        <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Teacher Dashboard</h1>
-              <p className="text-gray-600 mt-1 text-sm sm:text-base">Welcome back, {teacher.name || "Teacher"}!</p>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-4">
-              <Button variant="outline" onClick={() => router.push("/")} className="flex items-center gap-2 text-sm">
-                <Home className="h-4 w-4" />
-                <span className="hidden sm:inline">Back to Home</span>
-                <span className="sm:hidden">Home</span>
-              </Button>
-              <Badge className="bg-blue-100 text-blue-800 border-0 text-xs sm:text-sm">
-                <span className="sm:hidden">Active</span>
-                <span className="hidden sm:inline">Active Teacher</span>
-              </Badge>
-            </div>
+    <div className="min-h-screen bg-[#f7fbff] text-[#102a43]">
+      <div className="mx-auto flex max-w-[1500px] gap-6 px-4 py-4 sm:px-6 lg:px-8">
+        <aside className="hidden w-60 shrink-0 flex-col rounded-[28px] border border-[#dcecf5] bg-white p-4 shadow-[0_16px_45px_rgba(16,42,67,0.06)] lg:flex">
+          <div className="flex items-center gap-3 px-3 py-4">
+            <div className="flex size-10 items-center justify-center rounded-2xl bg-[#dff7fc] text-[#00a9c7]"><BookOpen data-icon="inline-start" /></div>
+            <div><p className="font-bold tracking-tight">Hobease</p><p className="text-xs text-[#6d8295]">Teach with purpose</p></div>
           </div>
-        </div>
+          <nav className="mt-8 flex flex-1 flex-col gap-2" aria-label="Teacher navigation">
+            {[['overview', TrendingUp, 'Overview'], ['profile', User, 'Profile'], ['skills', Award, 'Skills'], ['classes', BookOpen, 'Classes'], ['students', Users, 'Students'], ['earnings', DollarSign, 'Earnings'], ['messages', MessageSquare, 'Messages']].map(([tab, Icon, label]) => (
+              <button key={tab as string} type="button" onClick={() => setActiveTab(tab as string)} className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium transition-colors ${activeTab === tab ? 'bg-[#e5f8fc] text-[#087f9c]' : 'text-[#6d8295] hover:bg-[#f4faff]'}`}>
+                <Icon data-icon="inline-start" />{label as string}{tab === 'messages' && Object.values(unreadByBooking).some((count) => count > 0) && <span className="ml-auto size-2 rounded-full bg-[#f59e0b]" />}
+              </button>
+            ))}
+          </nav>
+          <Button variant="ghost" onClick={() => router.push('/')} className="justify-start gap-3 rounded-2xl text-[#6d8295]"><Home data-icon="inline-start" />Back to home</Button>
+        </aside>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-          {isMobile ? (
-            <div className="space-y-2">
-              <TabsList className="grid w-full grid-cols-4 h-auto">
-                <TabsTrigger value="overview" className="flex flex-col items-center space-y-1 py-2">
-                  <TrendingUp className="h-4 w-4" />
-                  <span className="text-xs">Overview</span>
-                </TabsTrigger>
-                <TabsTrigger value="profile" className="flex flex-col items-center space-y-1 py-2">
-                  <User className="h-4 w-4" />
-                  <span className="text-xs">Profile</span>
-                </TabsTrigger>
-                <TabsTrigger value="skills" className="flex flex-col items-center space-y-1 py-2">
-                  <Award className="h-4 w-4" />
-                  <span className="text-xs">Skills</span>
-                </TabsTrigger>
-                <TabsTrigger value="classes" className="flex flex-col items-center space-y-1 py-2">
-                  <BookOpen className="h-4 w-4" />
-                  <span className="text-xs">Classes</span>
-                </TabsTrigger>
-              </TabsList>
-              <TabsList className="grid w-full grid-cols-3 h-auto">
-                <TabsTrigger value="students" className="flex flex-col items-center space-y-1 py-2">
-                  <Users className="h-4 w-4" />
-                  <span className="text-xs">Students</span>
-                </TabsTrigger>
-                <TabsTrigger value="earnings" className="flex flex-col items-center space-y-1 py-2">
-                  <DollarSign className="h-4 w-4" />
-                  <span className="text-xs">Earnings</span>
-                </TabsTrigger>
-                <TabsTrigger value="messages" className="flex flex-col items-center space-y-1 py-2">
-                  <MessageSquare className="h-4 w-4" />
-                  <span className="text-xs">Messages</span>
-                </TabsTrigger>
-              </TabsList>
-            </div>
-          ) : (
-            <TabsList className="grid w-full grid-cols-7 lg:w-fit">
-              <TabsTrigger value="overview" className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                <span className="hidden sm:inline">Overview</span>
-              </TabsTrigger>
-              <TabsTrigger value="profile" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span className="hidden sm:inline">Profile</span>
-              </TabsTrigger>
-              <TabsTrigger value="skills" className="flex items-center gap-2">
-                <Award className="h-4 w-4" />
-                <span className="hidden sm:inline">Skills</span>
-              </TabsTrigger>
-              <TabsTrigger value="classes" className="flex items-center gap-2">
-                <BookOpen className="h-4 w-4" />
-                <span className="hidden sm:inline">Classes</span>
-              </TabsTrigger>
-              <TabsTrigger value="students" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                <span className="hidden sm:inline">Students</span>
-              </TabsTrigger>
-              <TabsTrigger value="earnings" className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                <span className="hidden sm:inline">Earnings</span>
-              </TabsTrigger>
-              <TabsTrigger value="messages" className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
-                <span className="hidden sm:inline">Messages</span>
-              </TabsTrigger>
-            </TabsList>
-          )}
+        <main className="min-w-0 flex-1">
+          <header className="mb-6 flex items-center justify-between gap-4 sm:mb-8">
+            <div><p className="mb-1 text-sm font-medium text-[#00a9c7]">Teacher Dashboard</p><h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Your teaching journey at a glance</h1></div>
+            <div className="flex items-center gap-3"><Button size="icon" variant="outline" className="rounded-2xl border-[#dcecf5] bg-white" aria-label="Notifications"><Bell data-icon="inline-start" /></Button><Avatar className="size-11 border-2 border-white shadow-sm"><AvatarImage src={teacher.photo_url || undefined} alt={teacher.name || 'Teacher'} /><AvatarFallback className="bg-[#dff7fc] text-[#087f9c]">{teacher.name?.charAt(0) || 'T'}</AvatarFallback></Avatar><div className="hidden sm:block"><p className="text-sm font-semibold">{teacher.name || 'Teacher'}</p><p className="text-xs text-[#6d8295]">Active teacher</p></div></div>
+          </header>
 
-          <TabsContent value="overview" className="space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Total Bookings</CardTitle>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">{bookings.length}</div>
-                </CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <div className="overflow-x-auto lg:hidden"><TabsList className="inline-flex min-w-full justify-start rounded-2xl bg-white p-1 shadow-sm">
+              {['overview','profile','skills','classes','students','earnings','messages'].map((tab) => <TabsTrigger key={tab} value={tab} className="rounded-xl px-3 py-2 text-xs capitalize sm:px-4 sm:text-sm">{tab}</TabsTrigger>)}
+            </TabsList></div>
+            <TabsContent value="overview" className="space-y-6">
+              <Card className="overflow-hidden rounded-[28px] border-[#dcecf5] bg-white shadow-[0_18px_50px_rgba(16,42,67,0.07)]">
+                <CardContent className="relative p-6 sm:p-8"><div className="pointer-events-none absolute -right-8 -top-12 size-40 rounded-full bg-[#dff7fc] blur-2xl" /><div className="pointer-events-none absolute bottom-0 right-24 size-24 rounded-full bg-[#fff0d7] blur-2xl" /><div className="relative flex flex-col gap-6 sm:flex-row sm:items-center"><Avatar className="size-20 border-4 border-white shadow-md"><AvatarImage src={teacher.photo_url || undefined} alt={teacher.name || 'Teacher'} /><AvatarFallback className="bg-[#e5f8fc] text-2xl font-semibold text-[#087f9c]">{teacher.name?.charAt(0) || 'T'}</AvatarFallback></Avatar><div className="flex-1"><Badge className="mb-3 border-0 bg-[#fff0d7] text-[#a96800]">Active teacher</Badge><h2 className="text-2xl font-bold sm:text-3xl">Welcome back, {teacher.name || 'Teacher'}</h2><p className="mt-2 max-w-xl text-sm leading-6 text-[#6d8295]">Create meaningful learning moments, keep your classes moving, and help every learner make progress.</p><p className="mt-3 text-sm font-medium text-[#087f9c]">{teacher.email}</p></div><Button onClick={() => router.push('/teacher/profile')} className="rounded-xl bg-[#102a43] hover:bg-[#173f5f]"><Edit data-icon="inline-start" />Edit profile</Button></div></CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Upcoming Classes</CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">{upcomingBookings.length}</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Total Earnings</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">₹{totalEarnings}</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Profile Score</CardTitle>
-                  <Star className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">{Math.round(getProfileCompletion())}%</div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">Profile Completion</CardTitle>
-                <CardDescription className="text-sm">Complete your profile to attract more students</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Progress value={getProfileCompletion()} className="mb-4" />
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-2 sm:space-y-0">
-                  <span className="text-sm text-gray-600">{Math.round(getProfileCompletion())}% Complete</span>
-                  <Button variant="outline" size="sm" onClick={() => router.push("/teacher/profile")}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit Profile
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              <div className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+                <Card className="rounded-[28px] border-[#dcecf5] bg-white shadow-[0_14px_40px_rgba(16,42,67,0.05)]"><CardHeader className="flex flex-row items-start justify-between gap-4"><div><CardTitle className="text-xl">Upcoming classes</CardTitle><CardDescription>Keep your next learning moments in view.</CardDescription></div><Button variant="ghost" size="sm" onClick={() => setActiveTab('classes')} className="text-[#087f9c]">View classes</Button></CardHeader><CardContent className="flex flex-col gap-3">{upcomingBookings.length === 0 ? <div className="rounded-2xl bg-[#f7fbff] p-6 text-center text-sm text-[#6d8295]">No upcoming classes yet.</div> : upcomingBookings.slice(0, 3).map((booking) => <div key={booking.id} className="flex flex-col gap-4 rounded-2xl border border-[#e4f0f5] bg-[#fbfdff] p-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><Avatar className="size-11"><AvatarFallback className="bg-[#fff0d7] text-[#a96800]">{booking.learner_name.charAt(0)}</AvatarFallback></Avatar><div><p className="font-semibold">{booking.learner_name}</p><p className="text-sm text-[#6d8295]">{booking.teacher_skill}</p><p className="mt-1 text-xs text-[#087f9c]">{new Intl.DateTimeFormat('en-US', { timeZone: 'UTC' }).format(new Date(`${booking.booking_date}T00:00:00Z`))} · {booking.booking_time}</p></div></div><div className="flex flex-wrap items-center gap-2"><Badge className="border-0 bg-[#e5f8fc] text-[#087f9c]">Confirmed</Badge><Button size="sm" onClick={() => handleStartClass(booking)} className="rounded-xl bg-[#00a9c7] hover:bg-[#087f9c]"><Video data-icon="inline-start" />Start class</Button></div></div>)}</CardContent></Card>
+                <div className="flex flex-col gap-6"><Card className="rounded-[28px] border-[#dcecf5] bg-white shadow-[0_14px_40px_rgba(16,42,67,0.05)]"><CardHeader><CardTitle className="text-xl">Your momentum</CardTitle><CardDescription>A quick look at your teaching activity.</CardDescription></CardHeader><CardContent className="grid grid-cols-2 gap-3"><div className="rounded-2xl bg-[#e5f8fc] p-4"><p className="text-2xl font-bold text-[#087f9c]">{bookings.length}</p><p className="mt-1 text-xs text-[#087f9c]">Bookings</p></div><div className="rounded-2xl bg-[#fff0d7] p-4"><p className="text-2xl font-bold text-[#a96800]">₹{totalEarnings}</p><p className="mt-1 text-xs text-[#a96800]">Earned</p></div></CardContent></Card><Card className="rounded-[28px] border-[#dcecf5] bg-white shadow-[0_14px_40px_rgba(16,42,67,0.05)]"><CardHeader><CardTitle className="text-xl">Profile progress</CardTitle><CardDescription>Complete your profile to attract more learners.</CardDescription></CardHeader><CardContent><Progress value={getProfileCompletion()} className="mb-3" /><div className="flex items-center justify-between text-sm"><span className="text-[#6d8295]">{Math.round(getProfileCompletion())}% complete</span><Button variant="link" size="sm" onClick={() => router.push('/teacher/profile')} className="px-0 text-[#087f9c]">Finish profile</Button></div></CardContent></Card></div>
+              </div>
+            </TabsContent>
 
           <TabsContent value="profile" className="space-y-4 sm:space-y-6">
             <Card>
@@ -1078,6 +975,7 @@ export default function TeacherDashboard() {
             currentUserEmail={user?.email || ""}
           />
         )}
+        </main>
       </div>
     </div>
   )

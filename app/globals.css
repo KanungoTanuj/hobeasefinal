@@ -131,6 +131,48 @@
 }
 
 @layer components {
+  .learner-dashboard [data-slot="card"] {
+    border-color: rgb(226 232 240 / 0.9);
+    border-radius: 1.25rem;
+    box-shadow: 0 14px 35px -28px rgb(15 23 42 / 0.45);
+  }
+
+  .dark .learner-dashboard [data-slot="card"] {
+    border-color: rgb(255 255 255 / 0.1);
+    box-shadow: 0 14px 35px -28px rgb(0 0 0 / 0.8);
+  }
+
+  .learner-dashboard [data-slot="card"]:has([data-slot="card-content"] > div.border) {
+    transition: box-shadow 180ms ease, transform 180ms ease;
+  }
+
+  .learner-dashboard [data-slot="card"]:has([data-slot="card-content"] > div.border):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 42px -26px rgb(0 144 178 / 0.32);
+  }
+
+  .learner-dashboard [data-slot="tabs-trigger"] {
+    border-radius: 0.9rem;
+    transition: background-color 180ms ease, color 180ms ease, box-shadow 180ms ease;
+  }
+
+  .learner-dashboard [data-slot="tabs-trigger"][data-state="active"] {
+    background: linear-gradient(135deg, #00b9d9, #008ca5);
+    color: white;
+    box-shadow: 0 8px 18px -10px rgb(0 144 178 / 0.8);
+  }
+
+  .learner-dashboard [data-slot="card-content"] > div.border {
+    border-color: rgb(226 232 240 / 0.9);
+    border-radius: 1rem;
+    background: rgb(248 252 253 / 0.72);
+  }
+
+  .dark .learner-dashboard [data-slot="card-content"] > div.border {
+    border-color: rgb(255 255 255 / 0.1);
+    background: rgb(255 255 255 / 0.035);
+  }
+
   .hobease-video-stage .lk-participant-tile,
   .hobease-video-stage .lk-participant-tile video,
   .hobease-video-stage .lk-participant-tile > div {
