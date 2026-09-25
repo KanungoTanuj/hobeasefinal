@@ -19,15 +19,28 @@ export async function POST(request: Request) {
     }
 
     const authenticatedTeacherAuthId = session.user.id
+    console.log("[v0] /api/classes/end received", { bookingId, authenticatedTeacherAuthId })
+
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
-      .select("id, teacher_auth_id, status")
+      .select("id, teacher_auth_id, teacher_id, status")
       .eq("id", bookingId)
       .single()
 
-    if (bookingError || !booking) {
+    if (bookingError) {
+      console.error("[v0] Booking lookup failed:", bookingError)
+    }
+    if (!booking) {
+      console.error("[v0] Booking lookup returned zero rows", { bookingId })
       return NextResponse.json({ error: "Booking not found" }, { status: 404 })
     }
+
+    console.log("[v0] Booking lookup succeeded", {
+      bookingId: booking.id,
+      bookingStatus: booking.status,
+      bookingTeacherAuthId: booking.teacher_auth_id,
+      bookingTeacherId: (booking as { teacher_id?: string | null }).teacher_id ?? null,
+    })
 
     if (booking.teacher_auth_id !== authenticatedTeacherAuthId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
@@ -72,8 +85,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to end class" }, { status: 500 })
     }
 
-    if (!updatedClass) {
-      console.error("[v0] Class end-time update affected zero rows", { bookingId, classId: classData.id })
+    console.log("[v0] Class update returned", { classId: classData.id, endTime: updatedClass?.end_time ?? null })
+    if (!updatedClass || !updatedClass.end_time) {
+      console.error("[v0] Class end-time update did not return a non-null end_time", { bookingId, classId: classData.id })
       return NextResponse.json({ error: "Failed to end class" }, { status: 500 })
     }
 
@@ -90,8 +104,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to update booking status" }, { status: 500 })
     }
 
-    if (!updatedBooking) {
-      console.error("[v0] Booking status update affected zero rows", { bookingId, classId: classData.id })
+    console.log("[v0] Booking update returned", { bookingId, status: updatedBooking?.status ?? null })
+    if (!updatedBooking || updatedBooking.status !== "awaiting_completion") {
+      console.error("[v0] Booking status update did not return awaiting_completion", { bookingId, classId: classData.id })
       return NextResponse.json({ error: "Booking is not in progress" }, { status: 409 })
     }
 
