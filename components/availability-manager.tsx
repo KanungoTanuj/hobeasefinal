@@ -376,8 +376,9 @@ export function AvailabilityManager({ teacherId }: AvailabilityManagerProps) {
                         </Badge>
                         <span className="text-sm font-medium">
                           {new Date(exception.exception_date).toLocaleDateString("en-US", {
-                            weekday: "long",
-                            year: "numeric",
+  weekday: "long",
+  year: "numeric",
+  timeZone: "UTC",
                             month: "long",
                             day: "numeric",
                           })}

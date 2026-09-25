@@ -816,7 +816,7 @@ export default function TeacherDashboard() {
                           <h4 className="font-medium text-sm sm:text-base">{booking.learner_name}</h4>
                           <p className="text-sm text-gray-600">{booking.learner_email}</p>
                           <p className="text-xs sm:text-sm text-gray-500">
-                            {new Date(booking.booking_date).toLocaleDateString()} at {booking.booking_time}
+                            {new Intl.DateTimeFormat("en-US", { timeZone: "UTC" }).format(new Date(`${booking.booking_date}T00:00:00Z`))} at {booking.booking_time}
                           </p>
                         </div>
                         <div className="flex items-center justify-between sm:flex-col sm:items-end sm:text-right gap-2">
@@ -956,7 +956,7 @@ export default function TeacherDashboard() {
                               <div>
                                 <h4 className="font-medium text-sm sm:text-base">{booking.learner_name}</h4>
                                 <p className="text-xs sm:text-sm text-muted-foreground">
-                                  {booking.teacher_skill} • {new Date(booking.booking_date).toLocaleDateString()}
+                                  {booking.teacher_skill} • {new Intl.DateTimeFormat("en-US", { timeZone: "UTC" }).format(new Date(`${booking.booking_date}T00:00:00Z`))}
                                 </p>
                               </div>
                             </div>

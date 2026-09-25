@@ -647,7 +647,7 @@ export default function LearnerDashboard() {
                                   <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-xs text-muted-foreground mt-1 space-y-1 sm:space-y-0">
                                     <div className="flex items-center space-x-1">
                                       <Calendar className="h-3 w-3" />
-                                      <span>{new Date(booking.booking_date).toLocaleDateString()}</span>
+                                      <span>{new Intl.DateTimeFormat("en-US", { timeZone: "UTC" }).format(new Date(`${booking.booking_date}T00:00:00Z`))}</span>
                                     </div>
                                     <div className="flex items-center space-x-1">
                                       <Clock className="h-3 w-3" />
@@ -763,7 +763,7 @@ export default function LearnerDashboard() {
                                   <p className="text-sm text-muted-foreground">{booking.teacher_skill}</p>
                                   <div className="flex items-center space-x-1 text-xs text-muted-foreground mt-1">
                                     <Calendar className="h-3 w-3" />
-                                    <span>{new Date(booking.booking_date).toLocaleDateString()}</span>
+                                    <span>{new Intl.DateTimeFormat("en-US", { timeZone: "UTC" }).format(new Date(`${booking.booking_date}T00:00:00Z`))}</span>
                                   </div>
                                 </div>
                               </div>
@@ -842,7 +842,7 @@ export default function LearnerDashboard() {
                           <div>
                             <p className="font-medium text-sm sm:text-base">{booking.teacher_name}</p>
                             <p className="text-xs sm:text-sm text-muted-foreground">
-                              {booking.teacher_skill} • {new Date(booking.booking_date).toLocaleDateString()}
+                              {booking.teacher_skill} • {new Intl.DateTimeFormat("en-US", { timeZone: "UTC" }).format(new Date(`${booking.booking_date}T00:00:00Z`))}
                             </p>
                           </div>
                           <div className="text-right">
