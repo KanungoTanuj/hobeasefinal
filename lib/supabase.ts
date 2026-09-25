@@ -6,8 +6,20 @@ const supabaseAnonKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxubXVnb2dxZHpzd2lydGR6c2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMTcyOTgsImV4cCI6MjA3MTY5MzI5OH0.M8JcyktEmusFtCmLmRabMZcR4IrDn1BK6CMroWn2tBI"
 
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
+
+let initialSessionPromise: ReturnType<typeof supabase.auth.getSession> | null = null
+
 export function createClientComponentClient() {
-  return createBrowserClient(supabaseUrl, supabaseAnonKey)
+  return supabase
+}
+
+export function getInitialSession() {
+  if (!initialSessionPromise) {
+    initialSessionPromise = supabase.auth.getSession()
+  }
+
+  return initialSessionPromise
 }
 
 // Import cookies dynamically inside the function to avoid build errors
@@ -33,5 +45,3 @@ export async function createServerComponentClient() {
     },
   })
 }
-
-export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)

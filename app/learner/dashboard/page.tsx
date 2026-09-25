@@ -23,7 +23,7 @@ import {
   Video,
   Bell,
 } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { getInitialSession, supabase } from "@/lib/supabase"
 import { ChatInterface } from "@/components/chat-interface"
 import { VideoCallInterface } from "@/components/video-call-interface"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -96,8 +96,9 @@ export default function LearnerDashboard() {
 
   const checkAuth = async () => {
     const {
-      data: { user },
-    } = await supabase.auth.getUser()
+      data: { session },
+    } = await getInitialSession()
+    const user = session?.user
 
     if (!user) {
       router.push("/auth")

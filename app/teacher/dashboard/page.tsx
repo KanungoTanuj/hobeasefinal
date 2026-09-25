@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClientComponentClient } from "@/lib/supabase"
+import { createClientComponentClient, getInitialSession } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -115,7 +115,7 @@ export default function TeacherDashboard() {
 
       const {
         data: { session },
-      } = await supabase.auth.getSession()
+      } = await getInitialSession()
 
       if (!session?.user) {
         router.push("/auth")

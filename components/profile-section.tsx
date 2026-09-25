@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { User, LogOut, GraduationCap, BookOpen } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { getInitialSession, supabase } from "@/lib/supabase"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
 import AuthModal from "./auth-modal"
 import Link from "next/link"
@@ -27,7 +27,7 @@ export default function ProfileSection() {
     const getSession = async () => {
       const {
         data: { session },
-      } = await supabase.auth.getSession()
+      } = await getInitialSession()
       setUser(session?.user ?? null)
       setLoading(false)
     }

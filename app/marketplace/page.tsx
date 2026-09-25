@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Star, Filter, MapPin, Loader2, Heart, Award, X } from "lucide-react"
 import BookingModal from "@/components/booking-modal"
 import ProfileSection from "@/components/profile-section"
-import { supabase } from "@/lib/supabase"
+import { getInitialSession, supabase } from "@/lib/supabase"
 import Fuse from "fuse.js"
 
 interface DatabaseSkill {
@@ -151,7 +151,7 @@ export default function MarketplacePage() {
       const {
         data: { session },
         error: sessionError,
-      } = await supabase.auth.getSession()
+      } = await getInitialSession()
 
       if (sessionError) {
         setUser(null)
