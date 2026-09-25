@@ -48,6 +48,8 @@ interface Booking {
   price_per_hour: number
   created_at: string
   updated_at: string
+  teacher_confirmed?: boolean
+  learner_confirmed?: boolean
   teacher: {
     name: string
     skill: string
@@ -222,10 +224,21 @@ export default function LearnerDashboard() {
       }
 
       if (!bookingsError && bookingsData) {
-        setBookings(bookingsData as Booking[])
+        const bookingIds = bookingsData.map((booking) => booking.id)
+        const { data: completionData, error: completionError } = bookingIds.length
+          ? await supabase.from("booking_completions").select("booking_id, teacher_confirmed, learner_confirmed").in("booking_id", bookingIds)
+          : { data: [], error: null }
+        if (completionError) console.error("[v0] Learner completion query error:", completionError)
+        const completionsByBooking = new Map((completionData || []).map((completion) => [completion.booking_id, completion]))
+        const normalizedBookings = bookingsData.map((booking) => ({
+          ...booking,
+          status: typeof booking.status === "string" ? booking.status.trim().toLowerCase() : booking.status,
+          ...(completionsByBooking.get(booking.id) || {}),
+        })) as Booking[]
+        setBookings(normalizedBookings)
 
         // Calculate total spent
-        const completed = bookingsData.filter((b) => b.status === "completed")
+        const completed = normalizedBookings.filter((b) => b.status === "completed")
         const total = completed.reduce((sum, booking) => sum + (booking.price_per_hour || 0), 0)
         setTotalSpent(total)
 
@@ -249,6 +262,31 @@ export default function LearnerDashboard() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (!user?.email || bookings.length === 0) return
+    const bookingIds = bookings.map((booking) => booking.id)
+    const channel = supabase
+      .channel(`learner-completions-${user.id}`)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "booking_completions",
+        filter: `booking_id=in.(${bookingIds.join(",")})`,
+      }, (payload) => {
+        const completion = payload.new as { booking_id?: string; teacher_confirmed?: boolean; learner_confirmed?: boolean }
+        if (!completion.booking_id || !bookingIds.includes(completion.booking_id)) return
+        console.log("[v0] COMPLETION REALTIME UPDATE", {
+          bookingId: completion.booking_id,
+          teacherConfirmed: completion.teacher_confirmed,
+          learnerConfirmed: completion.learner_confirmed,
+          status: bookings.find((booking) => booking.id === completion.booking_id)?.status,
+        })
+        void fetchLearnerData(user.email!)
+      })
+      .subscribe()
+    return () => { void supabase.removeChannel(channel) }
+  }, [user?.email, user?.id, bookings.length])
 
   const removeFromWishlist = async (skillId: string) => {
     if (!learner) return
@@ -317,6 +355,20 @@ export default function LearnerDashboard() {
     }
   }
 
+  const handleConfirmCompletion = async (booking: Booking) => {
+    const response = await fetch("/api/bookings/confirm-completion", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingId: booking.id }),
+    })
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({ error: "Unable to confirm completion" }))
+      alert(data.error)
+      return
+    }
+    await fetchLearnerData(user?.email || booking.learner_email)
+  }
+
   const handleCallEnd = () => {
     setIsVideoCallOpen(false)
     setSelectedBookingForCall(null)
@@ -326,7 +378,7 @@ export default function LearnerDashboard() {
 
   useEffect(() => {
     const checkStatuses = async () => {
-      const confirmedBookings = bookings.filter((b) => b.status === "confirmed")
+      const confirmedBookings = bookings.filter((b) => ["confirmed", "in_progress"].includes(b.status))
       console.log("[v0] Checking statuses for", confirmedBookings.length, "confirmed bookings")
       const statuses: { [key: string]: boolean } = {}
 
@@ -393,7 +445,7 @@ export default function LearnerDashboard() {
     )
   }
 
-  const upcomingBookings = bookings.filter((b) => b.status === "confirmed" || b.status === "pending")
+  const upcomingBookings = bookings.filter((b) => ["confirmed", "pending", "in_progress", "awaiting_completion"].includes(b.status))
   const completedBookings = bookings.filter((b) => b.status === "completed")
 
   console.log("[v0] Total bookings:", bookings.length)
@@ -633,7 +685,7 @@ export default function LearnerDashboard() {
                                   <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-xs text-muted-foreground mt-1 space-y-1 sm:space-y-0">
                                     <div className="flex items-center space-x-1">
                                       <Calendar className="h-3 w-3" />
-                                      <span>{new Date(booking.booking_date).toLocaleDateString()}</span>
+                                      <span>{new Intl.DateTimeFormat("en-US", { timeZone: "UTC" }).format(new Date(`${booking.booking_date}T00:00:00Z`))}</span>
                                     </div>
                                     <div className="flex items-center space-x-1">
                                       <Clock className="h-3 w-3" />
@@ -648,49 +700,50 @@ export default function LearnerDashboard() {
                                     ₹{booking.price_per_hour}
                                   </p>
                                   <Badge variant="secondary" className="text-xs">
-                                    {booking.status === "confirmed" ? "Confirmed" : "Pending"}
+                                    {booking.status === "awaiting_completion"
+                                      ? booking.learner_confirmed
+                                        ? "Awaiting Teacher Confirmation"
+                                        : "Awaiting Your Confirmation"
+                                      : booking.status === "in_progress"
+                                        ? "In Progress"
+                                        : booking.status === "confirmed"
+                                          ? "Confirmed"
+                                          : "Pending"}
                                   </Badge>
+                                  {booking.status === "awaiting_completion" && booking.learner_confirmed && (
+                                    <p className="mt-1 text-xs text-muted-foreground">You have confirmed. Waiting for the teacher.</p>
+                                  )}
+                                  {booking.status === "awaiting_completion" && !booking.learner_confirmed && booking.teacher_confirmed && (
+                                    <p className="mt-1 text-xs text-muted-foreground">Teacher has confirmed.</p>
+                                  )}
                                 </div>
                                 <div className="flex gap-2">
-                                  {(booking.status === "confirmed" || booking.status === "pending") && (
-                                    <Button
-                                      size="sm"
-                                      onClick={() => {
-                                        if (booking.status === "pending") {
-                                          alert(
-                                            "This booking needs to be confirmed first. Please wait for teacher confirmation.",
-                                          )
-                                          return
-                                        }
-                                        if (!classStatuses[booking.id]) {
-                                          alert(
-                                            "The teacher hasn't started the class yet. Please wait for them to start.",
-                                          )
-                                          return
-                                        }
-                                        handleJoinClass(booking)
-                                      }}
-                                      disabled={booking.status === "pending" || !classStatuses[booking.id]}
-                                      className="text-xs bg-green-600 hover:bg-green-700 disabled:opacity-50"
-                                      title={
-                                        booking.status === "pending"
-                                          ? "Waiting for confirmation"
-                                          : !classStatuses[booking.id]
-                                            ? "Waiting for teacher to start"
-                                            : "Join video class"
-                                      }
-                                    >
-                                      <Video className="h-3 w-3 mr-1" />
-                                      {booking.status === "pending"
-                                        ? "Join Class (Pending)"
-                                        : classStatuses[booking.id]
-                                          ? "Join Class"
-                                          : "Join Class (Not Started)"}
+{booking.status === "in_progress" && (
+  <Button
+    size="sm"
+    onClick={() => {
+      if (!classStatuses[booking.id]) {
+        alert(
+          "The teacher hasn't started the class yet. Please wait for them to start.",
+        )
+        return
+      }
+      handleJoinClass(booking)
+    }}
+    disabled={!classStatuses[booking.id]}
+    className="text-xs bg-green-600 hover:bg-green-700 disabled:opacity-50"
+    title={!classStatuses[booking.id] ? "Waiting for teacher to start" : "Join video class"}
+  >
+    <Video className="h-3 w-3 mr-1" />
+    {classStatuses[booking.id] ? "Join Class" : "Join Class (Not Started)"}
+  </Button>
+)}
+                                  {booking.status === "awaiting_completion" && !booking.learner_confirmed && (
+                                    <Button size="sm" onClick={() => void handleConfirmCompletion(booking)} className="text-xs bg-[#00B9D9] hover:bg-[#009ab5]">
+                                      Confirm Complete
                                     </Button>
                                   )}
-                                  {(booking.status === "confirmed" ||
-                                    booking.status === "pending" ||
-                                    booking.status === "completed") && (
+                                  {(["confirmed", "pending", "in_progress", "awaiting_completion", "completed"].includes(booking.status)) && (
                                     <Button
                                       size="sm"
                                       variant="outline"
@@ -746,7 +799,7 @@ export default function LearnerDashboard() {
                                   <p className="text-sm text-muted-foreground">{booking.teacher_skill}</p>
                                   <div className="flex items-center space-x-1 text-xs text-muted-foreground mt-1">
                                     <Calendar className="h-3 w-3" />
-                                    <span>{new Date(booking.booking_date).toLocaleDateString()}</span>
+                                    <span>{new Intl.DateTimeFormat("en-US", { timeZone: "UTC" }).format(new Date(`${booking.booking_date}T00:00:00Z`))}</span>
                                   </div>
                                 </div>
                               </div>
@@ -825,7 +878,7 @@ export default function LearnerDashboard() {
                           <div>
                             <p className="font-medium text-sm sm:text-base">{booking.teacher_name}</p>
                             <p className="text-xs sm:text-sm text-muted-foreground">
-                              {booking.teacher_skill} • {new Date(booking.booking_date).toLocaleDateString()}
+                              {booking.teacher_skill} • {new Intl.DateTimeFormat("en-US", { timeZone: "UTC" }).format(new Date(`${booking.booking_date}T00:00:00Z`))}
                             </p>
                           </div>
                           <div className="text-right">

@@ -57,6 +57,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Booking not found or unauthorized" }, { status: 404 })
     }
 
+    if (!booking || !["confirmed", "in_progress"].includes(booking.status)) {
+      return NextResponse.json({ error: "Booking must be confirmed before starting" }, { status: 409 })
+    }
+
+    const { data: learner, error: learnerError } = await supabase
+      .from("learners")
+      .select("id, auth_id")
+      .eq("id", booking.learner_id)
+      .maybeSingle()
+
+    if (learnerError || !learner) {
+      return NextResponse.json({ error: "Learner account not found" }, { status: 404 })
+    }
+
     // Check if class already exists for this booking
     const { data: existingClass, error: existingError } = await supabase
       .from("classes")
@@ -80,18 +94,31 @@ export async function POST(request: Request) {
     const roomId = `${booking.teacher_name.replace(/\s+/g, "-")}-${booking.learner_name.replace(/\s+/g, "-")}-${Date.now()}`
     console.log("[v0] Generated room ID:", roomId)
 
-    // Create new class
+    // `classes.student_id` references `learners.id`, not the learner's auth user ID.
     const classData = {
-      teacher_id: teacherId,
+      teacher_id: booking.teacher_id,
       student_id: booking.learner_id,
-      booking_id: bookingId,
+      booking_id: booking.id,
       room_id: roomId,
       start_time: new Date().toISOString(),
     }
 
-    console.log("[v0] Attempting to insert class with data:", JSON.stringify(classData, null, 2))
-    console.log("[v0] teacher_id type:", typeof classData.teacher_id, "value:", classData.teacher_id)
-    console.log("[v0] student_id type:", typeof classData.student_id, "value:", classData.student_id)
+    if (classData.student_id !== booking.learner_id) {
+      console.error("[v0] FATAL ID MAPPING ERROR", {
+        bookingId: booking.id,
+        bookingLearnerId: booking.learner_id,
+        studentIdBeingInserted: classData.student_id,
+      })
+
+      return NextResponse.json({ error: "Invalid class student ID mapping" }, { status: 500 })
+    }
+
+    console.log("[v0] FINAL CLASS INSERT", {
+      bookingId: booking.id,
+      bookingLearnerId: booking.learner_id,
+      studentIdBeingInserted: classData.student_id,
+      teacherIdBeingInserted: classData.teacher_id,
+    })
 
     const { data: newClass, error: classError } = await supabase.from("classes").insert([classData]).select().single()
 
@@ -104,6 +131,8 @@ export async function POST(request: Request) {
         { status: 500 },
       )
     }
+
+    await supabase.from("bookings").update({ status: "in_progress", updated_at: new Date().toISOString() }).eq("id", bookingId)
 
     console.log("[v0] Class started successfully:", newClass.id)
     return NextResponse.json({

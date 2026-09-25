@@ -300,7 +300,40 @@ export function VideoCallInterface({ roomId, classId, userName, userRole, onEndC
   const [serverUrl, setServerUrl] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
-  const handleEndCall = async () => { try { await fetch("/api/classes/end", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ classId }) }) } finally { onEndCall(); onClose() } }
+  const endRequestStartedRef = useRef(false)
+
+  useEffect(() => {
+    if (isOpen) endRequestStartedRef.current = false
+  }, [isOpen])
+
+  const handleEndCall = async () => {
+    // Leaving a room is not the same as ending the class. Only teachers may
+    // transition the booking through the teacher-only endpoint.
+    if (userRole === "learner") {
+      onEndCall()
+      onClose()
+      return
+    }
+    if (endRequestStartedRef.current) return
+    endRequestStartedRef.current = true
+
+    try {
+      const response = await fetch("/api/classes/end", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId: booking.id }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error || "Failed to end class")
+      onEndCall()
+      onClose()
+    } catch (reason) {
+      endRequestStartedRef.current = false
+      console.error("[v0] End class request failed", reason)
+      setError(reason instanceof Error ? reason.message : "Failed to end class")
+    }
+  }
+
   useEffect(() => {
     if (!isOpen || !roomId) return
     let cancelled = false

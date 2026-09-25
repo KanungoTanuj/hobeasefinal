@@ -80,6 +80,8 @@ interface Booking {
   status: string
   price_per_hour: number
   teacher_skill: string
+  teacher_confirmed?: boolean
+  learner_confirmed?: boolean
 }
 
 export default function TeacherDashboard() {
@@ -211,7 +213,16 @@ export default function TeacherDashboard() {
       }
 
       if (!bookingsError) {
-        setBookings(bookingsData || [])
+        const bookingIds = (bookingsData || []).map((booking) => booking.id)
+        const { data: completionData, error: completionError } = bookingIds.length
+          ? await supabase.from("booking_completions").select("booking_id, teacher_confirmed, learner_confirmed").in("booking_id", bookingIds)
+          : { data: [], error: null }
+        if (completionError) console.error("[v0] Teacher completion query error:", completionError)
+        const completionsByBooking = new Map((completionData || []).map((completion) => [completion.booking_id, completion]))
+        setBookings((bookingsData || []).map((booking) => ({
+          ...booking,
+          ...(completionsByBooking.get(booking.id) || {}),
+        })))
         console.log("[v0] Set bookings state with", bookingsData?.length || 0, "bookings")
       }
     } catch (error) {
@@ -220,6 +231,32 @@ export default function TeacherDashboard() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (!user?.id || bookings.length === 0) return
+    const supabase = createClientComponentClient()
+    const bookingIds = bookings.map((booking) => booking.id)
+    const channel = supabase
+      .channel(`teacher-completions-${user.id}`)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "booking_completions",
+        filter: `booking_id=in.(${bookingIds.join(",")})`,
+      }, (payload) => {
+        const completion = payload.new as { booking_id?: string; teacher_confirmed?: boolean; learner_confirmed?: boolean }
+        if (!completion.booking_id || !bookingIds.includes(completion.booking_id)) return
+        console.log("[v0] COMPLETION REALTIME UPDATE", {
+          bookingId: completion.booking_id,
+          teacherConfirmed: completion.teacher_confirmed,
+          learnerConfirmed: completion.learner_confirmed,
+          status: bookings.find((booking) => booking.id === completion.booking_id)?.status,
+        })
+        void fetchTeacherData(user.email!)
+      })
+      .subscribe()
+    return () => { void supabase.removeChannel(channel) }
+  }, [user?.id, user?.email, bookings.length])
 
   const fetchTeacherSkills = async (teacherId: string) => {
     try {
@@ -351,11 +388,38 @@ export default function TeacherDashboard() {
     }
   }
 
-  const handleCallEnd = () => {
+  const handleCallClose = () => {
     setIsVideoCallOpen(false)
     setSelectedBookingForCall(null)
     setActiveClassId(null)
     setActiveRoomId(null)
+  }
+
+  const handleCallEnd = () => {
+    handleCallClose()
+    setBookings((currentBookings) => currentBookings.map((booking) => booking.id === selectedBookingForCall?.id ? { ...booking, status: "awaiting_completion" } : booking))
+  }
+
+  const handleConfirmCompletion = async (booking: Booking) => {
+    console.log("[v0] TEACHER CONFIRM COMPLETE", {
+      bookingId: booking.id,
+      authenticatedUserId: user?.id ?? null,
+    })
+    const response = await fetch("/api/bookings/confirm-teacher-completion", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingId: booking.id }),
+    })
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({ error: "Unable to confirm completion" }))
+      console.error("[v0] TEACHER CONFIRM RESULT", { bookingId: booking.id, success: false, error: data.error })
+      alert(data.error)
+      return
+    }
+    console.log("[v0] TEACHER CONFIRM RESULT", { bookingId: booking.id, success: true, error: null })
+    const supabase = createClientComponentClient()
+    const { data } = await supabase.from("bookings").select("*").eq("id", booking.id).single()
+    setBookings((current) => current.map((item) => item.id === booking.id ? { ...item, ...(data || {}) } : item))
   }
 
   const getProfileCompletion = () => {
@@ -816,7 +880,7 @@ export default function TeacherDashboard() {
                           <h4 className="font-medium text-sm sm:text-base">{booking.learner_name}</h4>
                           <p className="text-sm text-gray-600">{booking.learner_email}</p>
                           <p className="text-xs sm:text-sm text-gray-500">
-                            {new Date(booking.booking_date).toLocaleDateString()} at {booking.booking_time}
+                            {new Intl.DateTimeFormat("en-US", { timeZone: "UTC" }).format(new Date(`${booking.booking_date}T00:00:00Z`))} at {booking.booking_time}
                           </p>
                         </div>
                         <div className="flex items-center justify-between sm:flex-col sm:items-end sm:text-right gap-2">
@@ -827,6 +891,18 @@ export default function TeacherDashboard() {
                             <p className="text-sm font-medium mb-2">₹{booking.price_per_hour}/hr</p>
                           </div>
                           <div className="flex gap-2">
+                            {booking.status === "awaiting_completion" && (
+                              <div className="flex flex-col items-end gap-1">
+                                <span className="text-xs text-muted-foreground">Awaiting Completion</span>
+                                {!booking.teacher_confirmed && (
+                                  <Button size="sm" onClick={() => void handleConfirmCompletion(booking)} className="text-xs bg-[#00B9D9] hover:bg-[#009ab5]">
+                                    Confirm Complete
+                                  </Button>
+                                )}
+                                {booking.teacher_confirmed && <span className="text-xs text-muted-foreground">Awaiting learner confirmation</span>}
+                                {!booking.teacher_confirmed && booking.learner_confirmed && <span className="text-xs text-muted-foreground">Learner has confirmed.</span>}
+                              </div>
+                            )}
                             {(booking.status === "confirmed" || booking.status === "pending") && (
                               <Button
                                 size="sm"
@@ -956,7 +1032,7 @@ export default function TeacherDashboard() {
                               <div>
                                 <h4 className="font-medium text-sm sm:text-base">{booking.learner_name}</h4>
                                 <p className="text-xs sm:text-sm text-muted-foreground">
-                                  {booking.teacher_skill} • {new Date(booking.booking_date).toLocaleDateString()}
+                                  {booking.teacher_skill} • {new Intl.DateTimeFormat("en-US", { timeZone: "UTC" }).format(new Date(`${booking.booking_date}T00:00:00Z`))}
                                 </p>
                               </div>
                             </div>
@@ -990,9 +1066,9 @@ export default function TeacherDashboard() {
             classId={activeClassId}
             userName={teacher?.name || "Teacher"}
             userRole="teacher"
-            onEndCall={handleCallEnd}
-            isOpen={isVideoCallOpen}
-            onClose={handleCallEnd}
+          onEndCall={handleCallEnd}
+          isOpen={isVideoCallOpen}
+          onClose={handleCallClose}
             booking={{
               ...selectedBookingForCall,
               teacher_name: teacher?.name || "Teacher",

@@ -446,14 +446,14 @@ export function ChatInterface({
       : { name: booking.learner_name, role: "learner", photoUrl: undefined }
 
   const formatMessageDate = (value: string) =>
-    new Date(value).toLocaleDateString([], {
+    new Intl.DateTimeFormat("en-US", { timeZone: "UTC",
       weekday: "long",
       month: "short",
       day: "numeric",
       year: "numeric",
-    })
+    }).format(new Date(value))
 
-  const messageDateKey = (value: string) => new Date(value).toLocaleDateString()
+  const messageDateKey = (value: string) => new Intl.DateTimeFormat("en-US", { timeZone: "UTC" }).format(new Date(value))
 
   return (
     <Card className="flex h-[min(680px,calc(100vh-10rem))] min-h-[520px] flex-col overflow-hidden rounded-2xl border-border/70 bg-card shadow-xl shadow-black/5">
@@ -536,7 +536,7 @@ export function ChatInterface({
                       >
                         <p className="whitespace-pre-wrap break-words text-sm leading-6">{message.content}</p>
                         <div className={`mt-1.5 flex items-center justify-end gap-1 text-[11px] ${isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                          <span>{new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                          <span>{new Intl.DateTimeFormat("en-US", { timeZone: "UTC", hour: "2-digit", minute: "2-digit" }).format(new Date(message.created_at))}</span>
                           {isCurrentUser && (message.is_read ? <CheckCheck className="size-3.5 text-sky-300" title="Read" /> : <Check className="size-3.5" title="Sent" />)}
                         </div>
                         {isCurrentUser && message.is_read && (

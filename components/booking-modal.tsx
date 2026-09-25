@@ -625,6 +625,7 @@ export default function BookingModal({ isOpen, onClose, skill }: BookingModalPro
     return date.toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
+      timeZone: "UTC",
       month: "long",
       day: "numeric",
     })
