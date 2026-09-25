@@ -168,7 +168,6 @@ export default function MarketplacePage() {
 
       if (session?.user) {
         setUser(session.user)
-        await fetchWishlist(session.user.id)
       } else {
         setUser(null)
       }
@@ -345,10 +344,9 @@ export default function MarketplacePage() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
         setUser(session.user)
-        await fetchWishlist(session.user.id)
       } else if (event === "SIGNED_OUT") {
         setUser(null)
         setWishlist(new Set())
@@ -359,6 +357,12 @@ export default function MarketplacePage() {
       subscription.unsubscribe()
     }
   }, [])
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchWishlist(user.id)
+    }
+  }, [user?.id])
 
   useEffect(() => {
     if (!isInitialized) {
