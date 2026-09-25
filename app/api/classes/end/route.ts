@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
-    // Update class end time
+    // Close the room, but leave the booking awaiting learner confirmation.
     const { error: updateError } = await supabase
       .from("classes")
       .update({ end_time: new Date().toISOString() })
@@ -42,6 +42,10 @@ export async function POST(request: Request) {
     if (updateError) {
       console.error("[v0] Error ending class:", updateError)
       return NextResponse.json({ error: "Failed to end class" }, { status: 500 })
+    }
+
+    if (classData.booking_id) {
+      await supabase.from("bookings").update({ status: "awaiting_completion", updated_at: new Date().toISOString() }).eq("id", classData.booking_id)
     }
 
     return NextResponse.json({ message: "Class ended successfully" })

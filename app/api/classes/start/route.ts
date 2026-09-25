@@ -57,6 +57,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Booking not found or unauthorized" }, { status: 404 })
     }
 
+    if (!booking || !["confirmed", "in_progress"].includes(booking.status)) {
+      return NextResponse.json({ error: "Booking must be confirmed before starting" }, { status: 409 })
+    }
+
+    const { data: learner, error: learnerError } = await supabase
+      .from("learners")
+      .select("auth_id")
+      .eq("id", booking.learner_id)
+      .maybeSingle()
+
+    if (learnerError || !learner?.auth_id) {
+      return NextResponse.json({ error: "Learner account not found" }, { status: 404 })
+    }
+
     // Check if class already exists for this booking
     const { data: existingClass, error: existingError } = await supabase
       .from("classes")
@@ -83,7 +97,7 @@ export async function POST(request: Request) {
     // Create new class
     const classData = {
       teacher_id: teacherId,
-      student_id: booking.learner_id,
+      student_id: learner.auth_id,
       booking_id: bookingId,
       room_id: roomId,
       start_time: new Date().toISOString(),
@@ -104,6 +118,8 @@ export async function POST(request: Request) {
         { status: 500 },
       )
     }
+
+    await supabase.from("bookings").update({ status: "in_progress", updated_at: new Date().toISOString() }).eq("id", bookingId)
 
     console.log("[v0] Class started successfully:", newClass.id)
     return NextResponse.json({

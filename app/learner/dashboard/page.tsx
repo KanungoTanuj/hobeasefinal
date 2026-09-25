@@ -317,6 +317,20 @@ export default function LearnerDashboard() {
     }
   }
 
+  const handleConfirmCompletion = async (booking: Booking) => {
+    const response = await fetch("/api/bookings/confirm-completion", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingId: booking.id }),
+    })
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({ error: "Unable to confirm completion" }))
+      alert(data.error)
+      return
+    }
+    setBookings((current) => current.map((item) => item.id === booking.id ? { ...item, status: "completed" } : item))
+  }
+
   const handleCallEnd = () => {
     setIsVideoCallOpen(false)
     setSelectedBookingForCall(null)
@@ -326,7 +340,7 @@ export default function LearnerDashboard() {
 
   useEffect(() => {
     const checkStatuses = async () => {
-      const confirmedBookings = bookings.filter((b) => b.status === "confirmed")
+      const confirmedBookings = bookings.filter((b) => ["confirmed", "in_progress"].includes(b.status))
       console.log("[v0] Checking statuses for", confirmedBookings.length, "confirmed bookings")
       const statuses: { [key: string]: boolean } = {}
 
@@ -652,7 +666,7 @@ export default function LearnerDashboard() {
                                   </Badge>
                                 </div>
                                 <div className="flex gap-2">
-                                  {(booking.status === "confirmed" || booking.status === "pending") && (
+                                  {["confirmed", "pending", "in_progress"].includes(booking.status) && (
                                     <Button
                                       size="sm"
                                       onClick={() => {
@@ -688,9 +702,12 @@ export default function LearnerDashboard() {
                                           : "Join Class (Not Started)"}
                                     </Button>
                                   )}
-                                  {(booking.status === "confirmed" ||
-                                    booking.status === "pending" ||
-                                    booking.status === "completed") && (
+                                  {booking.status === "awaiting_completion" && (
+                                    <Button size="sm" onClick={() => void handleConfirmCompletion(booking)} className="text-xs bg-[#00B9D9] hover:bg-[#009ab5]">
+                                      Confirm Completion
+                                    </Button>
+                                  )}
+                                  {(["confirmed", "pending", "in_progress", "awaiting_completion", "completed"].includes(booking.status)) && (
                                     <Button
                                       size="sm"
                                       variant="outline"

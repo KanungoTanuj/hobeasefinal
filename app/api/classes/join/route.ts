@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       .from("bookings")
       .select("*")
       .eq("id", bookingId)
-      .eq("learner_auth_id", studentAuthId)
+      .eq("learner_id", (await supabase.from("learners").select("id").eq("auth_id", studentAuthId).single()).data?.id)
       .single()
 
     console.log(
