@@ -353,6 +353,7 @@ export default function TeacherDashboard() {
 
   const handleCallEnd = () => {
     setIsVideoCallOpen(false)
+    setBookings((currentBookings) => currentBookings.map((booking) => booking.id === selectedBookingForCall?.id ? { ...booking, status: "awaiting_completion" } : booking))
     setSelectedBookingForCall(null)
     setActiveClassId(null)
     setActiveRoomId(null)
