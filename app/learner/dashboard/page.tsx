@@ -453,83 +453,64 @@ export default function LearnerDashboard() {
   console.log("[v0] Completed bookings:", completedBookings.length)
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="learner-dashboard min-h-screen bg-[#f7fbfd] text-slate-950 dark:bg-[#111a24] dark:text-white">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push("/")}
-                className="flex items-center space-x-1 sm:space-x-2"
-              >
-                <Home className="h-4 w-4" />
-                <span className="hidden sm:inline">Back to Home</span>
-              </Button>
-              <div className="h-6 w-px bg-border hidden sm:block" />
-              <h1 className="text-lg sm:text-xl font-bold">Learner Dashboard</h1>
+      <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl dark:border-white/10 dark:bg-[#111a24]/90">
+        <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 sm:px-6 lg:px-10">
+          <div className="flex items-center gap-3 sm:gap-5">
+            <Button variant="ghost" size="sm" onClick={() => router.push("/")} className="gap-2 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white">
+              <Home className="h-4 w-4" />
+              <span className="hidden sm:inline">Back to Home</span>
+            </Button>
+            <div className="hidden h-7 w-px bg-slate-200 sm:block dark:bg-white/10" />
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#00a9c5]">Hobease</p>
+              <h1 className="text-base font-bold sm:text-lg">Learner Dashboard</h1>
             </div>
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              {/* Quick links to Preferences and Ratings */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push("/learner/preferences")}
-                className="flex items-center space-x-1 sm:space-x-2"
-              >
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Preferences</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push("/learner/ratings")}
-                className="flex items-center space-x-1 sm:space-x-2"
-              >
-                <Star className="h-4 w-4" />
-                <span className="hidden sm:inline">Ratings</span>
-              </Button>
-              {/* existing status badge */}
-              <Badge
-                variant="secondary"
-                className="bg-[#00B9D9]/10 text-[#00B9D9] border-[#00B9D9]/20 text-xs sm:text-sm"
-              >
-                <span className="sm:hidden">Active</span>
-                <span className="hidden sm:inline">Active Learner</span>
-              </Badge>
-            </div>
+          </div>
+          <div className="flex items-center gap-1 sm:gap-3">
+            <Button variant="ghost" size="sm" onClick={() => router.push("/learner/preferences")} className="gap-2 rounded-xl text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10">
+              <Settings className="h-4 w-4" />
+              <span className="hidden lg:inline">Preferences</span>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => router.push("/learner/ratings")} className="gap-2 rounded-xl text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10">
+              <Star className="h-4 w-4" />
+              <span className="hidden lg:inline">Ratings</span>
+            </Button>
+            <Badge variant="secondary" className="rounded-full border border-[#00B9D9]/20 bg-[#00B9D9]/10 px-3 py-1 text-xs font-semibold text-[#008ca5] dark:text-[#55def2]">
+              <span className="sm:hidden">Active</span><span className="hidden sm:inline">Active Learner</span>
+            </Badge>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <div className="max-w-7xl mx-auto">
+      <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
+        <div className="mx-auto max-w-7xl">
           {/* Profile Section */}
-          <div className="mb-6 sm:mb-8">
-            <Card>
-              <CardHeader className="pb-4 sm:pb-6">
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <Avatar className="h-12 w-12 sm:h-16 sm:w-16">
-                    <AvatarImage src="/student-avatar.png" />
-                    <AvatarFallback className="bg-[#FF6600] text-white text-base sm:text-lg">
-                      {learner?.name?.charAt(0) || user?.email?.charAt(0) || "L"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <CardTitle className="text-xl sm:text-2xl">
-                      {learner?.name || user?.user_metadata?.full_name || "Learner"}
-                    </CardTitle>
-                    <p className="text-muted-foreground text-sm sm:text-base">{learner?.email || user?.email}</p>
-                  </div>
+          <div className="relative mb-7 overflow-hidden rounded-[2rem] border border-[#bcecf4] bg-gradient-to-br from-[#dff9fc] via-white to-[#fff0e8] p-6 shadow-[0_20px_60px_-35px_rgba(0,144,178,0.45)] dark:border-white/10 dark:from-[#173642] dark:via-[#1a2731] dark:to-[#38271f] sm:p-9">
+            <div className="pointer-events-none absolute -right-10 -top-16 size-48 rounded-full bg-[#00B9D9]/15 blur-2xl" />
+            <div className="pointer-events-none absolute -bottom-24 right-28 size-48 rounded-full bg-[#FF6600]/15 blur-3xl" />
+            <div className="relative flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
+              <div className="flex items-center gap-4 sm:gap-5">
+                <Avatar className="size-16 border-4 border-white shadow-lg sm:size-20 dark:border-white/20">
+                  <AvatarImage src="/student-avatar.png" />
+                  <AvatarFallback className="bg-[#FF6600] text-xl font-bold text-white sm:text-2xl">{learner?.name?.charAt(0) || user?.email?.charAt(0) || "L"}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="mb-1 text-sm font-semibold text-[#008ca5]">Welcome back</p>
+                  <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{learner?.name || user?.user_metadata?.full_name || "Learner"}</h2>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{learner?.email || user?.email}</p>
                 </div>
-              </CardHeader>
-            </Card>
+              </div>
+              <div className="max-w-xs text-left sm:text-right">
+                <p className="text-lg font-semibold text-slate-800 dark:text-white">Keep learning, one session at a time.</p>
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Your next milestone is closer than you think.</p>
+              </div>
+            </div>
           </div>
 
           {/* Dashboard Tabs */}
-          <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
+          <Tabs defaultValue="overview" className="space-y-5 sm:space-y-7">
             {isMobile ? (
               <TabsList className="grid w-full grid-cols-2 h-auto">
                 <TabsTrigger value="overview" className="flex flex-col items-center space-y-1 py-3">
@@ -554,7 +535,7 @@ export default function LearnerDashboard() {
                 </TabsTrigger>
               </TabsList>
             ) : (
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid h-auto w-full grid-cols-5 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm dark:border-white/10 dark:bg-white/5">
                 <TabsTrigger value="overview" className="flex items-center space-x-2">
                   <TrendingUp className="h-4 w-4" />
                   <span>Overview</span>
