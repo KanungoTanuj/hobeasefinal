@@ -63,11 +63,11 @@ export async function POST(request: Request) {
 
     const { data: learner, error: learnerError } = await supabase
       .from("learners")
-      .select("auth_id")
+      .select("id, auth_id")
       .eq("id", booking.learner_id)
       .maybeSingle()
 
-    if (learnerError || !learner?.auth_id) {
+    if (learnerError || !learner) {
       return NextResponse.json({ error: "Learner account not found" }, { status: 404 })
     }
 
@@ -96,9 +96,9 @@ export async function POST(request: Request) {
 
     // Create new class
     const classData = {
-      teacher_id: teacherId,
-      student_id: learner.auth_id,
-      booking_id: bookingId,
+      teacher_id: booking.teacher_id,
+      student_id: booking.learner_id,
+      booking_id: booking.id,
       room_id: roomId,
       start_time: new Date().toISOString(),
     }
