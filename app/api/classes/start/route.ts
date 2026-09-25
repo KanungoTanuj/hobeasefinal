@@ -94,10 +94,13 @@ export async function POST(request: Request) {
     const roomId = `${booking.teacher_name.replace(/\s+/g, "-")}-${booking.learner_name.replace(/\s+/g, "-")}-${Date.now()}`
     console.log("[v0] Generated room ID:", roomId)
 
+    // Keep the learner table ID separate from the authenticated user's ID.
+    const studentIdBeingInserted = booking.learner_id
+
     // Create new class
     const classData = {
       teacher_id: booking.teacher_id,
-      student_id: booking.learner_id,
+      student_id: studentIdBeingInserted,
       booking_id: booking.id,
       room_id: roomId,
       start_time: new Date().toISOString(),
@@ -107,7 +110,7 @@ export async function POST(request: Request) {
       bookingId: booking.id,
       bookingLearnerId: booking.learner_id,
       bookingTeacherId: booking.teacher_id,
-      studentIdBeingInserted: classData.student_id,
+      studentIdBeingInserted,
       teacherIdBeingInserted: classData.teacher_id,
     })
 
