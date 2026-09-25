@@ -110,11 +110,16 @@ export default function TeacherDashboard() {
   const isMobile = useIsMobile()
 
   useEffect(() => {
+    const timestamp = () => new Date().toISOString()
+    console.log(`[v0] [TEACHER] mount ${timestamp()}`)
     const checkAuth = async () => {
+      console.log(`[v0] [TEACHER] getInitialSession START ${timestamp()}`)
       try {
         const {
           data: { session },
         } = await getInitialSession()
+        console.log(`[v0] [TEACHER] getInitialSession RESOLVED ${timestamp()}`)
+        console.log(`[v0] [TEACHER] session/user values ${timestamp()}`, { hasSession: Boolean(session), userId: session?.user?.id ?? null, email: session?.user?.email ?? null })
 
         if (!session?.user) {
           router.push("/auth")
@@ -122,10 +127,12 @@ export default function TeacherDashboard() {
         }
 
         setUser(session.user)
+        console.log(`[v0] [TEACHER] fetchTeacherData START ${timestamp()}`)
         await fetchTeacherData(session.user.email!, session.user.id)
       } catch (error) {
-        console.error("[v0] Error checking teacher auth:", error)
+        console.error(`[v0] [TEACHER] getInitialSession REJECTED ${timestamp()}`, error)
       } finally {
+        console.log(`[v0] [TEACHER] getInitialSession FINALLY ${timestamp()}`)
         setLoading(false)
       }
     }
