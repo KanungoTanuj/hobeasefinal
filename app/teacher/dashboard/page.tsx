@@ -213,7 +213,16 @@ export default function TeacherDashboard() {
       }
 
       if (!bookingsError) {
-        setBookings(bookingsData || [])
+        const bookingIds = (bookingsData || []).map((booking) => booking.id)
+        const { data: completionData, error: completionError } = bookingIds.length
+          ? await supabase.from("booking_completions").select("booking_id, teacher_confirmed, learner_confirmed").in("booking_id", bookingIds)
+          : { data: [], error: null }
+        if (completionError) console.error("[v0] Teacher completion query error:", completionError)
+        const completionsByBooking = new Map((completionData || []).map((completion) => [completion.booking_id, completion]))
+        setBookings((bookingsData || []).map((booking) => ({
+          ...booking,
+          ...(completionsByBooking.get(booking.id) || {}),
+        })))
         console.log("[v0] Set bookings state with", bookingsData?.length || 0, "bookings")
       }
     } catch (error) {
@@ -222,6 +231,32 @@ export default function TeacherDashboard() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (!user?.id || bookings.length === 0) return
+    const supabase = createClientComponentClient()
+    const bookingIds = bookings.map((booking) => booking.id)
+    const channel = supabase
+      .channel(`teacher-completions-${user.id}`)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "booking_completions",
+        filter: `booking_id=in.(${bookingIds.join(",")})`,
+      }, (payload) => {
+        const completion = payload.new as { booking_id?: string; teacher_confirmed?: boolean; learner_confirmed?: boolean }
+        if (!completion.booking_id || !bookingIds.includes(completion.booking_id)) return
+        console.log("[v0] COMPLETION REALTIME UPDATE", {
+          bookingId: completion.booking_id,
+          teacherConfirmed: completion.teacher_confirmed,
+          learnerConfirmed: completion.learner_confirmed,
+          status: bookings.find((booking) => booking.id === completion.booking_id)?.status,
+        })
+        void fetchTeacherData(user.email!)
+      })
+      .subscribe()
+    return () => { void supabase.removeChannel(channel) }
+  }, [user?.id, user?.email, bookings.length])
 
   const fetchTeacherSkills = async (teacherId: string) => {
     try {

@@ -224,9 +224,16 @@ export default function LearnerDashboard() {
       }
 
       if (!bookingsError && bookingsData) {
+        const bookingIds = bookingsData.map((booking) => booking.id)
+        const { data: completionData, error: completionError } = bookingIds.length
+          ? await supabase.from("booking_completions").select("booking_id, teacher_confirmed, learner_confirmed").in("booking_id", bookingIds)
+          : { data: [], error: null }
+        if (completionError) console.error("[v0] Learner completion query error:", completionError)
+        const completionsByBooking = new Map((completionData || []).map((completion) => [completion.booking_id, completion]))
         const normalizedBookings = bookingsData.map((booking) => ({
           ...booking,
           status: typeof booking.status === "string" ? booking.status.trim().toLowerCase() : booking.status,
+          ...(completionsByBooking.get(booking.id) || {}),
         })) as Booking[]
         setBookings(normalizedBookings)
 
@@ -255,6 +262,31 @@ export default function LearnerDashboard() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (!user?.email || bookings.length === 0) return
+    const bookingIds = bookings.map((booking) => booking.id)
+    const channel = supabase
+      .channel(`learner-completions-${user.id}`)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "booking_completions",
+        filter: `booking_id=in.(${bookingIds.join(",")})`,
+      }, (payload) => {
+        const completion = payload.new as { booking_id?: string; teacher_confirmed?: boolean; learner_confirmed?: boolean }
+        if (!completion.booking_id || !bookingIds.includes(completion.booking_id)) return
+        console.log("[v0] COMPLETION REALTIME UPDATE", {
+          bookingId: completion.booking_id,
+          teacherConfirmed: completion.teacher_confirmed,
+          learnerConfirmed: completion.learner_confirmed,
+          status: bookings.find((booking) => booking.id === completion.booking_id)?.status,
+        })
+        void fetchLearnerData(user.email!)
+      })
+      .subscribe()
+    return () => { void supabase.removeChannel(channel) }
+  }, [user?.email, user?.id, bookings.length])
 
   const removeFromWishlist = async (skillId: string) => {
     if (!learner) return
