@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { User, LogOut, GraduationCap, BookOpen } from "lucide-react"
-import { getInitialSession, supabase } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
 import AuthModal from "./auth-modal"
 import Link from "next/link"
@@ -28,7 +28,7 @@ export default function ProfileSection() {
       try {
         const {
           data: { session },
-        } = await getInitialSession()
+        } = await supabase.auth.getSession()
         setUser(session?.user ?? null)
       } catch (error) {
         console.error("[v0] Profile header session initialization failed:", error)
