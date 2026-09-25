@@ -453,175 +453,33 @@ export default function LearnerDashboard() {
   console.log("[v0] Completed bookings:", completedBookings.length)
 
   return (
-    <div className="learner-dashboard min-h-screen bg-[#f7fbfd] text-slate-950 dark:bg-[#111a24] dark:text-white">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl dark:border-white/10 dark:bg-[#111a24]/90">
-        <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 sm:px-6 lg:px-10">
-          <div className="flex items-center gap-3 sm:gap-5">
-            <Button variant="ghost" size="sm" onClick={() => router.push("/")} className="gap-2 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white">
-              <Home className="h-4 w-4" />
-              <span className="hidden sm:inline">Back to Home</span>
-            </Button>
-            <div className="hidden h-7 w-px bg-slate-200 sm:block dark:bg-white/10" />
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#00a9c5]">Hobease</p>
-              <h1 className="text-base font-bold sm:text-lg">Learner Dashboard</h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-1 sm:gap-3">
-            <Button variant="ghost" size="sm" onClick={() => router.push("/learner/preferences")} className="gap-2 rounded-xl text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10">
-              <Settings className="h-4 w-4" />
-              <span className="hidden lg:inline">Preferences</span>
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/learner/ratings")} className="gap-2 rounded-xl text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10">
-              <Star className="h-4 w-4" />
-              <span className="hidden lg:inline">Ratings</span>
-            </Button>
-            <Badge variant="secondary" className="rounded-full border border-[#00B9D9]/20 bg-[#00B9D9]/10 px-3 py-1 text-xs font-semibold text-[#008ca5] dark:text-[#55def2]">
-              <span className="sm:hidden">Active</span><span className="hidden sm:inline">Active Learner</span>
-            </Badge>
-          </div>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
-        <div className="mx-auto max-w-7xl">
-          {/* Profile Section */}
-          <div className="relative mb-7 overflow-hidden rounded-[2rem] border border-[#bcecf4] bg-gradient-to-br from-[#dff9fc] via-white to-[#fff0e8] p-6 shadow-[0_20px_60px_-35px_rgba(0,144,178,0.45)] dark:border-white/10 dark:from-[#173642] dark:via-[#1a2731] dark:to-[#38271f] sm:p-9">
-            <div className="pointer-events-none absolute -right-10 -top-16 size-48 rounded-full bg-[#00B9D9]/15 blur-2xl" />
-            <div className="pointer-events-none absolute -bottom-24 right-28 size-48 rounded-full bg-[#FF6600]/15 blur-3xl" />
-            <div className="relative flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
-              <div className="flex items-center gap-4 sm:gap-5">
-                <Avatar className="size-16 border-4 border-white shadow-lg sm:size-20 dark:border-white/20">
-                  <AvatarImage src="/student-avatar.png" />
-                  <AvatarFallback className="bg-[#FF6600] text-xl font-bold text-white sm:text-2xl">{learner?.name?.charAt(0) || user?.email?.charAt(0) || "L"}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="mb-1 text-sm font-semibold text-[#008ca5]">Welcome back</p>
-                  <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{learner?.name || user?.user_metadata?.full_name || "Learner"}</h2>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{learner?.email || user?.email}</p>
-                </div>
-              </div>
-              <div className="max-w-xs text-left sm:text-right">
-                <p className="text-lg font-semibold text-slate-800 dark:text-white">Keep learning, one session at a time.</p>
-                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Your next milestone is closer than you think.</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Dashboard Tabs */}
-          <Tabs defaultValue="overview" className="space-y-5 sm:space-y-7">
-            {isMobile ? (
-              <TabsList className="grid w-full grid-cols-2 h-auto">
-                <TabsTrigger value="overview" className="flex flex-col items-center space-y-1 py-3">
-                  <TrendingUp className="h-4 w-4" />
-                  <span className="text-xs">Overview</span>
-                </TabsTrigger>
-                <TabsTrigger value="bookings" className="flex flex-col items-center space-y-1 py-3">
-                  <BookOpen className="h-4 w-4" />
-                  <span className="text-xs">Tutors</span>
-                </TabsTrigger>
-                <TabsTrigger value="payments" className="flex flex-col items-center space-y-1 py-3">
-                  <CreditCard className="h-4 w-4" />
-                  <span className="text-xs">Payments</span>
-                </TabsTrigger>
-                <TabsTrigger value="wishlist" className="flex flex-col items-center space-y-1 py-3">
-                  <Heart className="h-4 w-4" />
-                  <span className="text-xs">Wishlist</span>
-                </TabsTrigger>
-                <TabsTrigger value="settings" className="flex flex-col items-center space-y-1 py-3">
-                  <Settings className="h-4 w-4" />
-                  <span className="text-xs">Settings</span>
-                </TabsTrigger>
-              </TabsList>
-            ) : (
-              <TabsList className="grid h-auto w-full grid-cols-5 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm dark:border-white/10 dark:bg-white/5">
-                <TabsTrigger value="overview" className="flex items-center space-x-2">
-                  <TrendingUp className="h-4 w-4" />
-                  <span>Overview</span>
-                </TabsTrigger>
-                <TabsTrigger value="bookings" className="flex items-center space-x-2">
-                  <BookOpen className="h-4 w-4" />
-                  <span>My Tutors</span>
-                </TabsTrigger>
-                <TabsTrigger value="payments" className="flex items-center space-x-2">
-                  <CreditCard className="h-4 w-4" />
-                  <span>Payments</span>
-                </TabsTrigger>
-                <TabsTrigger value="wishlist" className="flex items-center space-x-2">
-                  <Heart className="h-4 w-4" />
-                  <span>Wishlist</span>
-                </TabsTrigger>
-                <TabsTrigger value="settings" className="flex items-center space-x-2">
-                  <Settings className="h-4 w-4" />
-                  <span>Settings</span>
-                </TabsTrigger>
-              </TabsList>
-            )}
+    <div className="learner-dashboard min-h-screen bg-[#f8fbfd] text-[#12243b]">
+      <Tabs defaultValue="overview" className="min-h-screen">
+        <div className="flex min-h-screen flex-col lg:flex-row">
+          <aside className="w-full shrink-0 border-b border-slate-200 bg-white px-4 py-4 lg:min-h-screen lg:w-64 lg:border-b-0 lg:border-r lg:px-5 lg:py-7">
+            <div className="mb-7 flex items-center gap-3 px-2"><div className="flex size-10 items-center justify-center rounded-2xl bg-[#e2f7fb] text-lg font-black text-[#079ab6]">H</div><div><p className="text-lg font-black tracking-tight">hobease</p><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Learn together</p></div></div>
+            <TabsList className="flex h-auto w-full flex-row gap-1 overflow-x-auto bg-transparent p-0 lg:flex-col lg:items-stretch">
+              <TabsTrigger value="overview" className="justify-start gap-3 rounded-xl px-3 py-3 text-slate-500 data-[state=active]:bg-[#e8f8fb] data-[state=active]:text-[#087e9b]"><TrendingUp /> Overview</TabsTrigger>
+              <TabsTrigger value="bookings" className="justify-start gap-3 rounded-xl px-3 py-3 text-slate-500 data-[state=active]:bg-[#e8f8fb] data-[state=active]:text-[#087e9b]"><BookOpen /> My Tutors</TabsTrigger>
+              <TabsTrigger value="payments" className="justify-start gap-3 rounded-xl px-3 py-3 text-slate-500 data-[state=active]:bg-[#e8f8fb] data-[state=active]:text-[#087e9b]"><CreditCard /> Payments</TabsTrigger>
+              <TabsTrigger value="wishlist" className="justify-start gap-3 rounded-xl px-3 py-3 text-slate-500 data-[state=active]:bg-[#e8f8fb] data-[state=active]:text-[#087e9b]"><Heart /> Wishlist</TabsTrigger>
+              <TabsTrigger value="settings" className="justify-start gap-3 rounded-xl px-3 py-3 text-slate-500 data-[state=active]:bg-[#e8f8fb] data-[state=active]:text-[#087e9b]"><Settings /> Settings</TabsTrigger>
+            </TabsList>
+            <div className="hidden border-t border-slate-100 pt-5 lg:block"><Button variant="ghost" onClick={() => router.push("/")} className="w-full justify-start gap-3 text-slate-500"><Home /> Back to home</Button><Button variant="ghost" onClick={() => router.push("/learner/preferences")} className="w-full justify-start gap-3 text-slate-500"><Settings /> Preferences</Button><Button variant="ghost" onClick={() => router.push("/learner/ratings")} className="w-full justify-start gap-3 text-slate-500"><Star /> Ratings</Button></div>
+          </aside>
+          <main className="min-w-0 flex-1 px-4 py-6 sm:px-7 lg:px-10 lg:py-9">
+            <header className="mb-7 flex items-start justify-between gap-4"><div><p className="text-sm font-semibold text-[#079ab6]">Learner Dashboard</p><h1 className="mt-1 text-2xl font-bold tracking-tight text-[#12243b] sm:text-3xl">Your learning journey at a glance</h1></div><div className="flex items-center gap-3"><Button variant="ghost" size="icon" className="rounded-xl text-slate-500"><Bell /></Button><Avatar className="size-10 border-2 border-white shadow-sm"><AvatarImage src="/student-avatar.png" /><AvatarFallback className="bg-[#ffeadf] text-[#d85b20]">{learner?.name?.charAt(0) || "L"}</AvatarFallback></Avatar><div className="hidden sm:block"><p className="text-sm font-semibold">{learner?.name || user?.user_metadata?.full_name || "Learner"}</p><p className="text-xs text-slate-500">{learner?.email || user?.email}</p></div></div></header>
+            <section className="relative mb-7 overflow-hidden rounded-[1.75rem] border border-[#d5edf2] bg-gradient-to-br from-[#ddf8fb] via-white to-[#fff0e4] p-6 shadow-[0_18px_45px_-32px_rgba(0,144,178,0.5)] sm:p-8"><div className="pointer-events-none absolute -right-10 -top-16 size-48 rounded-full bg-[#00b9d9]/15 blur-3xl" /><div className="pointer-events-none absolute -bottom-20 right-32 size-44 rounded-full bg-[#ff7c3b]/15 blur-3xl" /><div className="relative flex flex-col justify-between gap-6 sm:flex-row sm:items-center"><div className="flex items-center gap-4"><Avatar className="size-16 border-4 border-white shadow-md sm:size-20"><AvatarImage src="/student-avatar.png" /><AvatarFallback className="bg-[#ffeadf] text-xl font-bold text-[#d85b20]">{learner?.name?.charAt(0) || user?.email?.charAt(0) || "L"}</AvatarFallback></Avatar><div><p className="text-sm font-semibold text-[#087e9b]">Welcome back</p><h2 className="mt-1 text-2xl font-bold tracking-tight text-[#12243b] sm:text-3xl">{learner?.name || user?.user_metadata?.full_name || "Learner"}</h2><p className="mt-1 text-sm text-slate-600">{learner?.email || user?.email}</p></div></div><div className="max-w-sm sm:text-right"><p className="text-lg font-semibold text-[#233a55]">Keep learning, one session at a time.</p><p className="mt-1 text-sm text-slate-600">Your next milestone is closer than you think.</p></div></div></section>
 
             {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-4 sm:space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Sessions</CardTitle>
-                    <BookOpen className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-[#FF6600]">{completedBookings.length}</div>
-                    <p className="text-xs text-muted-foreground">Completed sessions</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
-                    <IndianRupee className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-[#00B9D9]">₹{totalSpent}</div>
-                    <p className="text-xs text-muted-foreground">On completed sessions</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="sm:col-span-2 lg:col-span-1">
-                  <CardHeader>
-                    <CardTitle className="text-lg sm:text-xl">Upcoming Sessions</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-green-600">{upcomingBookings.length}</div>
-                    <p className="text-xs text-muted-foreground">Confirmed bookings</p>
-                  </CardContent>
-                </Card>
+            <TabsContent value="overview" className="mt-0 space-y-6">
+              <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
+                <div className="space-y-6">
+                  <Card className="border-slate-200/80 bg-white shadow-[0_16px_38px_-30px_rgba(15,35,60,0.5)]"><CardHeader className="flex flex-row items-center justify-between"><div><CardTitle className="text-xl text-[#12243b]">Upcoming Sessions</CardTitle><p className="mt-1 text-sm text-slate-500">Your next steps are all in one place.</p></div><Badge className="bg-[#e8f8fb] text-[#087e9b] hover:bg-[#e8f8fb]">{upcomingBookings.length} scheduled</Badge></CardHeader><CardContent className="space-y-3">{upcomingBookings.length > 0 ? upcomingBookings.map((booking) => (<div key={booking.id} className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-[#fcfeff] p-4 transition-shadow hover:shadow-md sm:flex-row sm:items-center"><div className="flex min-w-0 flex-1 items-center gap-3"><Avatar className="size-12 shrink-0"><AvatarImage src={booking.teacher?.photo_url || "/placeholder.svg?height=48&width=48&query=teacher"} /><AvatarFallback className="bg-[#e2f7fb] text-[#087e9b]">{booking.teacher_name?.charAt(0) || "T"}</AvatarFallback></Avatar><div className="min-w-0"><p className="truncate font-semibold text-[#1d334d]">{booking.teacher_name}</p><p className="text-sm text-[#087e9b]">{booking.teacher_skill}</p><div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500"><span className="flex items-center gap-1"><Calendar />{new Intl.DateTimeFormat("en-US", { timeZone: "UTC" }).format(new Date(`${booking.booking_date}T00:00:00Z`))}</span><span className="flex items-center gap-1"><Clock />{booking.booking_time}</span></div></div></div><div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end"><div className="text-left sm:text-right"><p className="font-semibold text-[#e3682e]">₹{booking.price_per_hour}</p><Badge variant="secondary" className="mt-1 bg-[#e8f8fb] text-[#087e9b]">{booking.status === "awaiting_completion" ? booking.learner_confirmed ? "Awaiting teacher" : "Awaiting confirmation" : booking.status === "in_progress" ? "In Progress" : booking.status === "confirmed" ? "Confirmed" : "Pending"}</Badge></div><div className="flex gap-2">{booking.status === "in_progress" && <Button size="sm" onClick={() => { if (!classStatuses[booking.id]) { alert("The teacher hasn't started the class yet. Please wait for them to start."); return } handleJoinClass(booking) }} disabled={!classStatuses[booking.id]} className="bg-[#087e9b] text-xs hover:bg-[#076b84]"><Video /> Join</Button>}{booking.status === "awaiting_completion" && !booking.learner_confirmed && <Button size="sm" onClick={() => void handleConfirmCompletion(booking)} className="bg-[#087e9b] text-xs hover:bg-[#076b84]">Confirm</Button>}<Button size="sm" variant="outline" onClick={() => setSelectedBookingForChat(booking)} className="relative text-xs"><MessageSquare /> Chat{unreadByBooking[booking.id] && <Badge className="absolute -right-2 -top-2 size-5 bg-[#e3682e] p-0 text-[10px] text-white">{unreadByBooking[booking.id]}</Badge>}</Button></div></div></div>)) : <p className="py-8 text-center text-sm text-slate-500">No upcoming sessions</p>}</CardContent></Card>
+                  <Card className="border-slate-200/80 bg-white shadow-[0_16px_38px_-30px_rgba(15,35,60,0.5)]"><CardHeader className="flex flex-row items-center justify-between"><div><CardTitle className="text-xl text-[#12243b]">Past Sessions</CardTitle><p className="mt-1 text-sm text-slate-500">Your completed learning history.</p></div><BookOpen className="text-slate-300" /></CardHeader><CardContent className="space-y-3">{completedBookings.length > 0 ? completedBookings.slice(0, 5).map((booking) => (<div key={booking.id} className="flex items-center gap-3 rounded-2xl border border-slate-100 p-4"><Avatar className="size-11"><AvatarImage src={booking.teacher?.photo_url || "/placeholder.svg?height=44&width=44&query=teacher"} /><AvatarFallback>{booking.teacher_name?.charAt(0) || "T"}</AvatarFallback></Avatar><div className="min-w-0 flex-1"><p className="font-semibold text-[#1d334d]">{booking.teacher_name}</p><p className="text-sm text-slate-500">{booking.teacher_skill} · {new Intl.DateTimeFormat("en-US", { timeZone: "UTC" }).format(new Date(`${booking.booking_date}T00:00:00Z`))}</p></div><div className="text-right"><p className="font-semibold text-[#e3682e]">₹{booking.price_per_hour}</p><Badge variant="secondary" className="bg-[#edf8ee] text-[#3a8a52]">Completed</Badge></div></div>)) : <p className="py-8 text-center text-sm text-slate-500">No completed sessions yet</p>}</CardContent></Card>
+                </div>
+                <div className="space-y-6"><Card className="border-slate-200/80 bg-white"><CardHeader><CardTitle className="text-lg">Calendar</CardTitle><p className="text-sm text-slate-500">Your booked dates</p></CardHeader><CardContent><div className="grid grid-cols-7 gap-1 text-center text-xs">{["S","M","T","W","T","F","S"].map((day, index) => <span key={`${day}-${index}`} className="py-2 font-semibold text-slate-400">{day}</span>)}{Array.from({ length: 35 }, (_, index) => { const date = index - 1; const event = bookings.some((booking) => new Date(`${booking.booking_date}T00:00:00Z`).getUTCDate() === date); return <span key={index} className={`rounded-lg py-2 ${event ? "bg-[#e8f8fb] font-bold text-[#087e9b]" : "text-slate-600"}`}>{date > 0 && date <= 31 ? date : ""}</span> })}</div></CardContent></Card><Card className="border-slate-200/80 bg-white"><CardHeader><CardTitle className="text-lg">Quick Actions</CardTitle></CardHeader><CardContent className="grid gap-2"><Button variant="outline" onClick={() => router.push("/marketplace")} className="justify-start gap-3"><BookOpen /> Explore Tutors</Button><Button variant="outline" onClick={() => router.push("/learner/preferences")} className="justify-start gap-3"><Heart /> My Wishlist</Button><Button variant="outline" onClick={() => router.push("/learner/ratings")} className="justify-start gap-3"><Star /> My Ratings</Button><Button variant="outline" onClick={() => router.push("/learner/preferences")} className="justify-start gap-3"><Settings /> Preferences</Button></CardContent></Card><div className="rounded-[1.5rem] bg-gradient-to-br from-[#fff0e4] to-[#e2f7fb] p-6"><p className="text-lg font-bold text-[#233a55]">Small steps, big progress.</p><p className="mt-2 text-sm leading-6 text-slate-600">Stay curious and keep showing up for your goals.</p></div></div>
               </div>
-
-              {/* Progress Tracker */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Learning Progress</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {progressData.length > 0 ? (
-                    <div className="space-y-3 sm:space-y-4">
-                      {progressData.map((progress) => (
-                        <div key={progress.teacher_skill} className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-2 h-2 bg-[#FF6600] rounded-full flex-shrink-0" />
-                            <span className="font-medium text-sm sm:text-base">{progress.teacher_skill}</span>
-                          </div>
-                          <Badge variant="secondary" className="text-xs">
-                            {progress.sessions} session{progress.sessions !== 1 ? "s" : ""}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground text-center py-6 sm:py-8 text-sm sm:text-base">
-                      No completed sessions yet. Book your first session to start tracking progress!
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
             </TabsContent>
 
             {/* Bookings Tab */}
@@ -967,9 +825,9 @@ export default function LearnerDashboard() {
                 </CardContent>
               </Card>
             </TabsContent>
-          </Tabs>
+        </main>
         </div>
-      </div>
+      </Tabs>
 
       {/* Video Call Interface */}
       {selectedBookingForCall && activeClassId && activeRoomId && (
