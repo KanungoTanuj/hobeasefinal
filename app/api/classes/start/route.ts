@@ -103,9 +103,13 @@ export async function POST(request: Request) {
       start_time: new Date().toISOString(),
     }
 
-    console.log("[v0] Attempting to insert class with data:", JSON.stringify(classData, null, 2))
-    console.log("[v0] teacher_id type:", typeof classData.teacher_id, "value:", classData.teacher_id)
-    console.log("[v0] student_id type:", typeof classData.student_id, "value:", classData.student_id)
+    console.log("[v0] Class insert diagnostics:", {
+      bookingId: booking.id,
+      bookingLearnerId: booking.learner_id,
+      bookingTeacherId: booking.teacher_id,
+      studentIdBeingInserted: classData.student_id,
+      teacherIdBeingInserted: classData.teacher_id,
+    })
 
     const { data: newClass, error: classError } = await supabase.from("classes").insert([classData]).select().single()
 
