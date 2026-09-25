@@ -491,49 +491,41 @@ export default function MarketplacePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#f7fbff] text-[#132b4f]">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center">
-              <Link href="/" className="hover:opacity-80 transition-opacity cursor-pointer">
-                <h1 className="text-2xl font-bold font-serif">
-                  <span className="text-[#FF6600]">Hob</span>
-                  <span className="text-[#00B9D9]">ease</span>
-                </h1>
-              </Link>
-            </div>
-            <nav className="hidden md:flex items-center space-x-8">
-              <a href="#" className="text-primary font-medium">
-                Browse Skills
-              </a>
-              <a href="#" className="text-foreground hover:text-primary transition-colors">
-                How it Works
-              </a>
-              <ProfileSection />
-            </nav>
-          </div>
+      <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+        <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-5 sm:px-8 lg:px-10">
+          <Link href="/" className="cursor-pointer transition-opacity hover:opacity-80" aria-label="Hobease home">
+            <h1 className="text-[27px] font-bold tracking-tight">
+              <span className="text-[#FF6600]">Hob</span><span className="text-[#00B9D9]">ease</span>
+            </h1>
+          </Link>
+          <nav className="hidden items-center gap-8 md:flex">
+            <a href="#" className="relative py-6 text-sm font-semibold text-[#ff6600] after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[#ff6600]">Browse Skills</a>
+            <a href="#" className="py-6 text-sm font-medium text-slate-600 transition-colors hover:text-[#ff6600]">How it Works</a>
+            <ProfileSection />
+          </nav>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="py-12 bg-gradient-to-br from-[#FF6600] to-[#00B9D9]">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 font-serif">Find Your Perfect Skill</h1>
-            <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto">
-              Browse expert skills from passionate teachers and find the perfect match for your learning goals.
-            </p>
+      <section className="relative overflow-hidden bg-gradient-to-br from-white via-[#fffaf6] to-[#e8f8ff]">
+        <div className="pointer-events-none absolute -left-20 top-8 size-56 rounded-full bg-[#ffb37d]/20 blur-3xl" />
+        <div className="pointer-events-none absolute right-0 top-0 size-80 rounded-full bg-[#8de7f5]/25 blur-3xl" />
+        <div className="relative mx-auto flex min-h-[265px] max-w-[1280px] items-center px-5 py-12 sm:px-8 lg:px-10">
+          <div className="max-w-[670px]">
+            <span className="mb-5 inline-flex rounded-full border border-[#8de7f5] bg-[#e7fbff] px-3.5 py-1.5 text-xs font-bold tracking-wide text-[#008caf]">LEARN TOGETHER</span>
+            <h1 className="text-4xl font-bold leading-tight tracking-tight text-[#112b50] sm:text-5xl lg:text-[52px]">Find Your Perfect <span className="text-[#ff6600]">Skill</span></h1>
+            <p className="mt-4 max-w-[610px] text-base leading-7 text-slate-500 sm:text-lg">Browse expert skills from passionate teachers and find the perfect match for your learning goals.</p>
           </div>
+          <div className="pointer-events-none absolute -right-16 bottom-[-100px] hidden size-80 rounded-full bg-[#ffd6b5]/40 blur-2xl lg:block" />
         </div>
       </section>
 
       {/* Search and Filters */}
-      <section className="py-8 bg-muted/30 border-b border-border">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex flex-col md:flex-row gap-4">
+      <section className="relative z-10 -mt-1 px-5 sm:px-8 lg:px-10">
+        <div className="mx-auto max-w-[1160px] rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_16px_45px_-24px_rgba(27,65,108,0.35)] sm:p-6">
+          <div className="flex flex-col gap-3 md:flex-row">
               {/* Search Bar */}
               <form
                 className="flex-1 relative"
@@ -547,7 +539,7 @@ export default function MarketplacePage() {
                   value={inputValue}
                   onChange={handleInputChange}
                   disabled={isSearching}
-                  className="pl-10 pr-10 h-12 border-2 border-gray-200 focus:border-[#FF6600] focus:ring-[#FF6600]/20"
+                  className="h-12 border-slate-200 bg-white pl-11 pr-10 text-sm shadow-none focus:border-[#00B9D9] focus:ring-[#00B9D9]/20"
                 />
                 {inputValue && (
                   <Button
@@ -568,7 +560,7 @@ export default function MarketplacePage() {
 
               {/* Category Filter */}
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-full md:w-48 h-12 border-2 border-gray-200 focus:border-[#FF6600]">
+                <SelectTrigger className="h-12 w-full border-slate-200 bg-white shadow-none focus:border-[#00B9D9] md:w-48">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Select Category" />
                 </SelectTrigger>
@@ -583,7 +575,7 @@ export default function MarketplacePage() {
 
               {/* Price Filter */}
               <Select value={selectedPriceRange} onValueChange={setSelectedPriceRange}>
-                <SelectTrigger className="w-full md:w-48 h-12 border-2 border-gray-200 focus:border-[#FF6600]">
+                <SelectTrigger className="h-12 w-full border-slate-200 bg-white shadow-none focus:border-[#00B9D9] md:w-48">
                   <SelectValue placeholder="Select Price Range" />
                 </SelectTrigger>
                 <SelectContent>
@@ -633,12 +625,11 @@ export default function MarketplacePage() {
               )}
             </div>
           </div>
-        </div>
       </section>
 
       {/* Skills Grid */}
-      <section className="py-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="px-5 py-12 sm:px-8 lg:px-10">
+        <div className="mx-auto max-w-[1280px]">
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-[#FF6600]" />
@@ -654,14 +645,14 @@ export default function MarketplacePage() {
               </div>
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
+            <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
               {filteredSkills.map((skill) => (
                 <Card
                   key={skill.skillId}
-                  className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden"
+                  className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_12px_32px_-22px_rgba(27,65,108,0.45)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-22px_rgba(27,65,108,0.5)]"
                 >
                   {/* Teacher Photo */}
-                  <div className="aspect-square overflow-hidden relative">
+                  <div className="relative aspect-[16/9] overflow-hidden bg-gradient-to-br from-[#dff8fc] via-[#f7fbff] to-[#ffe5d1]">
                     <img
                       src={skill.teacherPhoto || "/placeholder.svg?height=300&width=300&query=professional teacher"}
                       alt={skill.teacherName}
@@ -671,27 +662,27 @@ export default function MarketplacePage() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="absolute top-2 right-2 h-8 w-8 p-0 bg-white/80 hover:bg-white/90 backdrop-blur-sm"
+                      className="absolute right-3 top-3 size-10 rounded-full bg-white shadow-md hover:bg-white"
                       onClick={() => toggleWishlist(skill.skillId)}
                     >
                       <Heart
-                        className={`h-4 w-4 ${
-                          wishlist.has(skill.skillId) ? "fill-red-500 text-red-500" : "text-gray-600"
+                        className={`size-5 ${
+                          wishlist.has(skill.skillId) ? "fill-[#ff4d5f] text-[#ff4d5f]" : "text-slate-500"
                         }`}
                       />
                     </Button>
                     {/* Primary Skill Badge */}
                     {skill.isPrimary && (
-                      <Badge className="absolute top-2 left-2 bg-yellow-100 text-yellow-800 border-yellow-200">
+                      <Badge className="absolute left-3 top-3 border-[#f5c94a] bg-[#fff7d6] text-[#855b00] shadow-sm">
                         <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
                         Primary
                       </Badge>
                     )}
                   </div>
 
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge variant="secondary" className="text-xs">
+                  <CardHeader className="gap-3 pb-3 pt-5">
+                    <div className="flex items-center justify-between gap-3">
+                      <Badge variant="secondary" className="border-0 bg-[#dff8fc] text-xs font-medium text-[#006f88]">
                         {skill.skillCategory}
                       </Badge>
                       <div className="flex items-center text-sm text-muted-foreground">
@@ -699,14 +690,14 @@ export default function MarketplacePage() {
                         {skill.teacherRating}
                       </div>
                     </div>
-                    <CardTitle className="text-lg group-hover:text-[#FF6600] transition-colors">
+                    <CardTitle className="text-xl font-bold tracking-tight text-[#132b4f] transition-colors group-hover:text-[#ff6600]">
                       {skill.skillName}
                     </CardTitle>
-                    <p className="text-sm font-medium text-[#00B9D9]">by {skill.teacherName}</p>
+                    <p className="text-sm font-medium text-[#00a8c5]">by {skill.teacherName}</p>
                   </CardHeader>
 
-                  <CardContent className="pt-0">
-                    <div className="space-y-3">
+                  <CardContent className="pt-0 pb-5">
+                    <div className="flex flex-col gap-3">
                       {/* Location and Experience */}
                       <div className="flex items-center text-sm text-muted-foreground">
                         <MapPin className="h-4 w-4 mr-1" />
@@ -733,14 +724,14 @@ export default function MarketplacePage() {
                       </p>
 
                       {/* Price and CTA */}
-                      <div className="flex items-center justify-between pt-2">
+                      <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-4">
                         <div>
-                          <span className="text-2xl font-bold text-[#FF6600]">₹{skill.pricePerHour}</span>
+                          <span className="text-2xl font-bold text-[#ff6600]">₹{skill.pricePerHour}</span>
                           <span className="text-sm text-muted-foreground">/hour</span>
                         </div>
                         <Link href={`/teachers/${skill.teacherId}?skillId=${skill.skillId}`}>
-                          <Button size="sm" className="bg-[#FF6600] hover:bg-[#FF6600]/90 text-white">
-                            View Profile
+                          <Button size="sm" className="rounded-lg bg-[#ff6600] px-5 text-white shadow-sm hover:bg-[#e85d00]">
+                            View Profile <span aria-hidden="true" className="ml-2">→</span>
                           </Button>
                         </Link>
                       </div>
