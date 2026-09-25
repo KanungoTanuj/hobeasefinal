@@ -10,20 +10,21 @@ export async function POST(request: Request) {
     }
 
     const {
-      data: { session },
+      data: { user },
       error: authError,
-    } = await supabase.auth.getSession()
+    } = await supabase.auth.getUser()
 
-    if (authError || !session) {
+    if (authError || !user) {
+      console.error("[v0] End class auth lookup failed", { message: authError?.message ?? "No authenticated user" })
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const authenticatedTeacherAuthId = session.user.id
+    const authenticatedTeacherAuthId = user.id
     console.log("[v0] /api/classes/end received", { bookingId, authenticatedTeacherAuthId })
 
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
-      .select("id, teacher_auth_id, teacher_id, status")
+      .select("id, teacher_auth_id, learner_auth_id, teacher_id, status")
       .eq("id", bookingId)
       .single()
 
@@ -39,7 +40,17 @@ export async function POST(request: Request) {
       bookingId: booking.id,
       bookingStatus: booking.status,
       bookingTeacherAuthId: booking.teacher_auth_id,
+      bookingLearnerAuthId: booking.learner_auth_id,
       bookingTeacherId: (booking as { teacher_id?: string | null }).teacher_id ?? null,
+      authenticatedUserId: user.id,
+    })
+    console.log("[v0] END CLASS BOOKING AUTH DEBUG", {
+      bookingId,
+      authenticatedUserId: user.id,
+      bookingTeacherAuthId: booking.teacher_auth_id,
+      bookingLearnerAuthId: booking.learner_auth_id,
+      bookingTeacherId: booking.teacher_id,
+      bookingStatus: booking.status,
     })
 
     if (booking.teacher_auth_id !== authenticatedTeacherAuthId) {
@@ -76,13 +87,14 @@ export async function POST(request: Request) {
     const { data: updatedClass, error: classUpdateError } = await supabase
       .from("classes")
       .update({ end_time: endTime })
+      .eq("booking_id", booking.id)
       .eq("id", classData.id)
       .select("id, end_time")
       .maybeSingle()
 
     if (classUpdateError) {
       console.error("[v0] Error updating class end time:", classUpdateError)
-      return NextResponse.json({ error: "Failed to end class" }, { status: 500 })
+      return NextResponse.json({ error: classUpdateError.message }, { status: 500 })
     }
 
     console.log("[v0] Class update returned", { classId: classData.id, endTime: updatedClass?.end_time ?? null })
@@ -101,7 +113,7 @@ export async function POST(request: Request) {
 
     if (bookingUpdateError) {
       console.error("[v0] Error updating booking status:", bookingUpdateError)
-      return NextResponse.json({ error: "Failed to update booking status" }, { status: 500 })
+      return NextResponse.json({ error: bookingUpdateError.message }, { status: 500 })
     }
 
     console.log("[v0] Booking update returned", { bookingId, status: updatedBooking?.status ?? null })
