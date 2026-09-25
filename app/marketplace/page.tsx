@@ -627,7 +627,7 @@ export default function MarketplacePage() {
           </div>
       </section>
 
-      {/* Skills Grid */}
+      {/* Skills Grid results */}
       <section className="px-5 py-12 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-[1280px]">
           {loading ? (

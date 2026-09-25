@@ -95,18 +95,25 @@ export default function LearnerDashboard() {
   const isMobile = useIsMobile()
 
   const checkAuth = async () => {
-    const {
-      data: { session },
-    } = await getInitialSession()
-    const user = session?.user
+    try {
+      const {
+        data: { session },
+      } = await getInitialSession()
+      const user = session?.user
 
-    if (!user) {
-      router.push("/auth")
-      return
+      if (!user) {
+        router.push("/auth")
+        return
+      }
+
+      setUser(user)
+      await fetchLearnerData(user.email!)
+    } catch (error) {
+      console.error("[v0] Error checking learner auth:", error)
+      setError("Unable to initialize your session. Please try again.")
+    } finally {
+      setLoading(false)
     }
-
-    setUser(user)
-    await fetchLearnerData(user.email!)
   }
 
   const fetchLearnerData = async (email: string) => {

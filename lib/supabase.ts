@@ -16,7 +16,9 @@ export function createClientComponentClient() {
 
 export function getInitialSession() {
   if (!initialSessionPromise) {
-    initialSessionPromise = supabase.auth.getSession()
+    initialSessionPromise = supabase.auth.getSession().finally(() => {
+      initialSessionPromise = null
+    })
   }
 
   return initialSessionPromise

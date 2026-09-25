@@ -111,19 +111,23 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const supabase = createClientComponentClient()
+      try {
+        const {
+          data: { session },
+        } = await getInitialSession()
 
-      const {
-        data: { session },
-      } = await getInitialSession()
+        if (!session?.user) {
+          router.push("/auth")
+          return
+        }
 
-      if (!session?.user) {
-        router.push("/auth")
-        return
+        setUser(session.user)
+        await fetchTeacherData(session.user.email!, session.user.id)
+      } catch (error) {
+        console.error("[v0] Error checking teacher auth:", error)
+      } finally {
+        setLoading(false)
       }
-
-      setUser(session.user)
-      await fetchTeacherData(session.user.email!)
     }
 
     checkAuth()
@@ -147,7 +151,7 @@ export default function TeacherDashboard() {
     return () => clearInterval(interval)
   }, [])
 
-  const fetchTeacherData = async (email: string) => {
+  const fetchTeacherData = async (email: string, authId?: string) => {
     try {
       console.log("[v0] Fetching teacher data for email:", email)
 
@@ -157,7 +161,7 @@ export default function TeacherDashboard() {
       const { data: teacherByAuthId, error: authLookupError } = await supabase
         .from("Teachers")
         .select(teacherColumns)
-        .eq("auth_id", user?.id ?? "")
+        .eq("auth_id", authId ?? "")
         .maybeSingle()
 
       const { data: teacherByEmail, error: emailLookupError } = teacherByAuthId
@@ -252,7 +256,7 @@ export default function TeacherDashboard() {
           learnerConfirmed: completion.learner_confirmed,
           status: bookings.find((booking) => booking.id === completion.booking_id)?.status,
         })
-        void fetchTeacherData(user.email!)
+        void fetchTeacherData(user.email!, user.id)
       })
       .subscribe()
     return () => { void supabase.removeChannel(channel) }
