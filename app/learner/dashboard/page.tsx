@@ -224,10 +224,15 @@ export default function LearnerDashboard() {
       }
 
       if (!bookingsError && bookingsData) {
-        setBookings(bookingsData as Booking[])
+        const normalizedBookings = bookingsData.map((booking) => ({
+          ...booking,
+          status: typeof booking.status === "string" ? booking.status.trim().toLowerCase() : booking.status,
+        })) as Booking[]
+        console.log("[v0] Learner booking lifecycle", normalizedBookings.map((booking) => ({ id: booking.id, status: booking.status })))
+        setBookings(normalizedBookings)
 
         // Calculate total spent
-        const completed = bookingsData.filter((b) => b.status === "completed")
+        const completed = normalizedBookings.filter((b) => b.status === "completed")
         const total = completed.reduce((sum, booking) => sum + (booking.price_per_hour || 0), 0)
         setTotalSpent(total)
 

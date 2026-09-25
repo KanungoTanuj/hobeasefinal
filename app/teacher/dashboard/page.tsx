@@ -366,6 +366,10 @@ export default function TeacherDashboard() {
   }
 
   const handleConfirmCompletion = async (booking: Booking) => {
+    console.log("[v0] TEACHER CONFIRM COMPLETE", {
+      bookingId: booking.id,
+      authenticatedUserId: user?.id ?? null,
+    })
     const response = await fetch("/api/bookings/confirm-teacher-completion", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -373,9 +377,11 @@ export default function TeacherDashboard() {
     })
     if (!response.ok) {
       const data = await response.json().catch(() => ({ error: "Unable to confirm completion" }))
+      console.error("[v0] TEACHER CONFIRM RESULT", { bookingId: booking.id, success: false, error: data.error })
       alert(data.error)
       return
     }
+    console.log("[v0] TEACHER CONFIRM RESULT", { bookingId: booking.id, success: true, error: null })
     const supabase = createClientComponentClient()
     const { data } = await supabase.from("bookings").select("*").eq("id", booking.id).single()
     setBookings((current) => current.map((item) => item.id === booking.id ? { ...item, ...(data || {}) } : item))

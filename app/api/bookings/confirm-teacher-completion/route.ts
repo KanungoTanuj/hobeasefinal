@@ -7,10 +7,11 @@ export async function POST(request: Request) {
     if (!bookingId) return NextResponse.json({ error: "Booking ID is required" }, { status: 400 })
 
     const supabase = await createServerComponentClient()
-    const { data: { session }, error: authError } = await supabase.auth.getSession()
-    if (authError || !session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    console.log("[v0] TEACHER CONFIRM COMPLETE", { bookingId, authenticatedUserId: user?.id ?? null })
+    if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-    const { data: teacher } = await supabase.from("Teachers").select("id").eq("auth_id", session.user.id).maybeSingle()
+    const { data: teacher } = await supabase.from("Teachers").select("id").eq("auth_id", user.id).maybeSingle()
     if (!teacher) return NextResponse.json({ error: "Teacher profile not found" }, { status: 404 })
 
     const { data: booking, error: bookingError } = await supabase
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
       classId: activeClass?.id ?? null,
       classEndTime: activeClass?.end_time ?? null,
       teacherAuthId: activeClass?.teacher_id ?? null,
-      authenticatedUserId: session.user.id,
+      authenticatedUserId: user.id,
       classLookupError: classError?.message ?? null,
     })
 
@@ -42,6 +43,7 @@ export async function POST(request: Request) {
     if (normalizedStatus !== "awaiting_completion") return NextResponse.json({ error: "This class is not ready for completion" }, { status: 409 })
 
     const { error } = await supabase.rpc("confirm_booking_completion_as_teacher", { p_booking_id: bookingId })
+    console.log("[v0] TEACHER CONFIRM RESULT", { bookingId, success: !error, error: error?.message ?? null })
     if (error) {
       console.error("[v0] Teacher completion RPC failed:", error)
       return NextResponse.json({ error: "Failed to confirm completion" }, { status: 500 })
