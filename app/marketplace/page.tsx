@@ -69,6 +69,7 @@ const categories = [
 const priceRanges = ["All Prices", "Under ₹500", "₹500-₹1000", "₹1000-₹2000", "Over ₹2000"]
 
 export default function MarketplacePage() {
+  console.log("[v0] [MARKETPLACE] render", { loading: true })
   const searchParams = useSearchParams()
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("") // Used for actual filtering
@@ -91,6 +92,7 @@ export default function MarketplacePage() {
   const lastLoggedQueryRef = useRef<string | null>(null) // track last logged query to avoid duplicate inserts
 
   const fetchSkills = async () => {
+    console.log("[v0] [MARKETPLACE] skills fetch START")
     try {
       // Check cache first
       const cachedSkills = sessionStorage.getItem('marketplace_skills')
@@ -106,7 +108,9 @@ export default function MarketplacePage() {
       setLoading(true)
       setError(null)
 
+      console.log("[v0] [MARKETPLACE] skills fetch RESPONSE start")
       const { data, error: supabaseError } = await supabase.from("teacher_skills_view").select("*")
+      console.log("[v0] [MARKETPLACE] skills fetch RESPONSE", { rows: data?.length ?? 0, error: supabaseError?.message ?? null })
 
       if (supabaseError) {
         throw supabaseError
@@ -133,14 +137,18 @@ export default function MarketplacePage() {
         reviews: Math.floor(Math.random() * 200) + 10,
       }))
 
+      console.log("[v0] [MARKETPLACE] skills count", transformedSkills.length)
       setSkills(transformedSkills)
+      console.log("[v0] [MARKETPLACE] setSkills")
       // Cache for 5 minutes
       sessionStorage.setItem('marketplace_skills', JSON.stringify(transformedSkills))
       sessionStorage.setItem('marketplace_skills_time', String(now))
     } catch (err) {
+      console.error("[v0] [MARKETPLACE] skills fetch ERROR", err)
       setError("Failed to load skills. Please try again.")
     } finally {
       setLoading(false)
+      console.log("[v0] [MARKETPLACE] setLoading(false)")
     }
   }
 
@@ -330,6 +338,8 @@ export default function MarketplacePage() {
   }
 
   useEffect(() => {
+    console.log("[v0] [MARKETPLACE] mounted")
+    console.log("[v0] [MARKETPLACE] skills effect START", { user, authLoading, loading, searchTerm, selectedCategory, selectedPriceRange })
     fetchSkills()
     getCurrentUser()
 
