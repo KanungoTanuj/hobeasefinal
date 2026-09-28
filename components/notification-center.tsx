@@ -5,9 +5,9 @@ import { Bell, Check, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { supabase } from "@/lib/supabase"
+import { supabaseBrowser } from "@/lib/supabase-browser"
 
-type Notification = { id: string; type: string; title: string; content: string | null; related_id: string | null; is_read: boolean; created_at: string }
+type Notification = { id: string; type: string; title: string; body: string | null; target_url: string | null; is_read: boolean; created_at: string }
 
 export function NotificationCenter() {
   const [items, setItems] = useState<Notification[]>([])
@@ -24,15 +24,15 @@ export function NotificationCenter() {
     if (typeof window === "undefined") return
     setPermission("Notification" in window ? Notification.permission : "unsupported")
     load()
-    let channel: ReturnType<typeof supabase.channel> | undefined
+    let channel: ReturnType<typeof supabaseBrowser.channel> | undefined
     let cancelled = false
-    supabase.auth.getUser().then(({ data }) => {
+    supabaseBrowser.auth.getUser().then(({ data }) => {
       if (cancelled || !data.user) return
-      channel = supabase.channel(`user-notifications-${data.user.id}`).on("postgres_changes", {
-        event: "INSERT", schema: "public", table: "notifications", filter: `user_auth_id=eq.${data.user.id}`,
+      channel = supabaseBrowser.channel(`user-notifications-${data.user.id}`).on("postgres_changes", {
+        event: "INSERT", schema: "public", table: "notifications", filter: `recipient_auth_id=eq.${data.user.id}`,
       }, load).subscribe()
     })
-    return () => { cancelled = true; if (channel) supabase.removeChannel(channel) }
+    return () => { cancelled = true; if (channel) supabaseBrowser.removeChannel(channel) }
   }, [])
 
   async function enablePush() {
@@ -64,7 +64,7 @@ export function NotificationCenter() {
       <div className="flex items-center justify-between border-b p-4"><div><h2 className="font-semibold">Notifications</h2><p className="text-xs text-muted-foreground">Updates from your Hobease activity</p></div>{unread > 0 && <Button variant="ghost" size="sm" onClick={() => markRead()}>Mark all read</Button>}</div>
       {permission === "default" && <div className="flex items-center justify-between gap-3 border-b p-3 text-xs"><span>Enable browser alerts for new updates.</span><Button size="sm" onClick={enablePush}>Enable</Button></div>}
       <div className="flex max-h-80 flex-col overflow-y-auto">
-        {loading ? <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div> : items.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">You&apos;re all caught up.</p> : items.map((item) => <button key={item.id} type="button" onClick={() => !item.is_read && markRead(item.id)} className="flex gap-3 border-b p-3 text-left hover:bg-muted/50"><span className={`mt-1 size-2 shrink-0 rounded-full ${item.is_read ? "bg-transparent" : "bg-primary"}`} /><span className="min-w-0 flex-1"><span className="block text-sm font-medium">{item.title}</span>{item.content && <span className="mt-1 block text-xs text-muted-foreground">{item.content}</span>}<time className="mt-1 block text-[11px] text-muted-foreground">{new Date(item.created_at).toLocaleString()}</time></span>{item.is_read && <Check className="text-muted-foreground" />}</button>)}
+        {loading ? <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div> : items.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">You&apos;re all caught up.</p> : items.map((item) => <button key={item.id} type="button" onClick={() => !item.is_read && markRead(item.id)} className="flex gap-3 border-b p-3 text-left hover:bg-muted/50"><span className={`mt-1 size-2 shrink-0 rounded-full ${item.is_read ? "bg-transparent" : "bg-primary"}`} /><span className="min-w-0 flex-1"><span className="block text-sm font-medium">{item.title}</span>{item.body && <span className="mt-1 block text-xs text-muted-foreground">{item.body}</span>}<time className="mt-1 block text-[11px] text-muted-foreground">{new Date(item.created_at).toLocaleString()}</time></span>{item.is_read && <Check className="text-muted-foreground" />}</button>)}
       </div>
     </PopoverContent>
   </Popover>

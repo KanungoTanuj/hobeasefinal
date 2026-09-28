@@ -24,7 +24,7 @@ export async function PATCH(request: Request) {
     const query = supabase
       .from("notifications")
       .update({ is_read: true, read_at: new Date().toISOString() })
-      .eq("user_auth_id", user.id)
+      .eq("recipient_auth_id", user.id)
     const { error } = body.id ? await query.eq("id", body.id) : await query.eq("is_read", false)
     if (error) throw error
     return NextResponse.json({ ok: true })
