@@ -1,13 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { createServerComponentClient } from "@/lib/supabase"
 import { notifyNewMessage } from "@/lib/notification-events"
 
-function createServerSupabaseClient() {
-  return createClient(
-    "https://lnmugogqdzswirtdzshx.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxubXVnb2dxZHpzd2lydGR6c2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMTcyOTgsImV4cCI6MjA3MTY5MzI5OH0.M8JcyktEmusFtCmLmRabMZcR4IrDn1BK6CMroWn2tBI",
-  )
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +12,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Booking ID is required" }, { status: 400 })
     }
 
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerComponentClient()
 
     console.log("[v0] Attempting to get user from server-side Supabase client")
     const {
@@ -66,7 +60,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid sender role" }, { status: 400 })
     }
 
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerComponentClient()
 
     console.log("[v0] POST: Attempting to get user from server-side Supabase client")
     const {
@@ -99,9 +93,13 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      await notifyNewMessage(booking_id, user.id, sender_role)
+      await notifyNewMessage(booking_id, message.id, user.id, sender_role)
     } catch (notificationError) {
-      console.error("[v0] Message notification failed:", notificationError)
+      console.error("[v0] Message notification creation failed", {
+        messageId: message.id,
+        bookingId: booking_id,
+        error: notificationError,
+      })
     }
 
     console.log("[v0] POST: Successfully created message")

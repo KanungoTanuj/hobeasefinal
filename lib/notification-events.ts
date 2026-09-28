@@ -1,15 +1,31 @@
-import { createNotification, getBookingParticipants, notifyUsers } from "@/lib/notifications"
+import { createNotification, getBookingParticipants } from "@/lib/notifications"
 
-export async function notifyNewMessage(bookingId: string, senderId: string, senderRole: string) {
+export async function notifyNewMessage(bookingId: string, messageId: string, senderId: string, senderRole: string) {
   const participants = await getBookingParticipants(bookingId)
-  const recipients = participants.filter((id) => id !== senderId)
-  await notifyUsers(recipients, { type: "message", title: `New message from your ${senderRole === "teacher" ? "teacher" : "learner"}`, content: "You have a new message in your booking chat.", relatedId: bookingId })
-}
+  const recipientAuthId = participants.find((id) => id !== senderId)
+  if (!recipientAuthId) throw new Error("Could not determine message recipient")
 
-export async function notifyBookingUpdate(bookingId: string, title: string, content: string) {
-  await notifyUsers(await getBookingParticipants(bookingId), { type: "booking", title, content, relatedId: bookingId })
+  const notification = await createNotification({
+    recipientAuthId,
+    type: "message",
+    title: `New message from your ${senderRole === "teacher" ? "teacher" : "learner"}`,
+    body: "You have a new message in your booking chat.",
+    bookingId,
+    messageId,
+    targetUrl: `/messages?booking_id=${bookingId}`,
+    eventKey: `message:${messageId}:${recipientAuthId}`,
+  })
+
+  console.log("[v0] Message notification created", { notificationId: notification?.id, messageId, recipientAuthId })
 }
 
 export async function notifyCompletion(userId: string, title: string, content: string, bookingId?: string) {
-  await createNotification({ userAuthId: userId, type: "completion", title, content, relatedId: bookingId })
+  return createNotification({
+    recipientAuthId: userId,
+    type: "completion",
+    title,
+    body: content,
+    bookingId,
+    eventKey: `completion:${bookingId ?? userId}:${userId}`,
+  })
 }

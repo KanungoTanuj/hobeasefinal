@@ -6,8 +6,8 @@ export async function GET() {
     const { supabase, user } = await getAuthenticatedUser()
     const { data, error } = await supabase
       .from("notifications")
-      .select("id, type, title, content, related_id, is_read, created_at, read_at")
-      .eq("user_auth_id", user.id)
+      .select("id, recipient_auth_id, type, title, body, is_read, created_at, read_at, booking_id, class_id, message_id, rating_id, target_url, event_key, metadata")
+      .eq("recipient_auth_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50)
     if (error) throw error
