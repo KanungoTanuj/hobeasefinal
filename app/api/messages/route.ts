@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { notifyNewMessage } from "@/lib/notification-events"
 
 function createServerSupabaseClient() {
   return createClient(
@@ -95,6 +96,12 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error("[v0] Error creating message:", error)
       return NextResponse.json({ error: "Failed to send message" }, { status: 500 })
+    }
+
+    try {
+      await notifyNewMessage(booking_id, user.id, sender_role)
+    } catch (notificationError) {
+      console.error("[v0] Message notification failed:", notificationError)
     }
 
     console.log("[v0] POST: Successfully created message")

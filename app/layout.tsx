@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Poppins, Montserrat } from "next/font/google"
 import "./globals.css"
 import { TranslationProvider } from "@/components/translation-provider"
+import { NotificationCenter } from "@/components/notification-center"
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -32,7 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${poppins.variable} ${montserrat.variable} antialiased`}>
       <body className="font-sans">
-        <TranslationProvider>{children}</TranslationProvider>
+        <TranslationProvider><div className="fixed right-4 top-4 z-50"><NotificationCenter /></div>{children}</TranslationProvider>
       </body>
     </html>
   )
