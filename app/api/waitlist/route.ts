@@ -1,6 +1,6 @@
-import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import { createServerComponentClient } from "@/lib/supabase"
 
 const waitlistSchema = z.object({
   name: z.string().trim().min(1, "Please enter your name.").max(120, "Name is too long."),
@@ -15,16 +15,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Please check your details." }, { status: 400 })
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!supabaseUrl || !serviceRoleKey) {
-      console.error("[v0] Waitlist persistence is not configured")
-      return NextResponse.json({ error: "Waitlist signups are temporarily unavailable. Please try again later." }, { status: 503 })
-    }
-
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    })
+    const supabase = await createServerComponentClient()
     const { error } = await supabase.from("waitlist_signups").insert({
       name: parsed.data.name,
       email: parsed.data.email.toLowerCase(),

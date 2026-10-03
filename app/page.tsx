@@ -1,7 +1,5 @@
 "use client"
 
-import ComingSoonPage from "@/components/coming-soon-page"
-
 import type React from "react"
 
 import { Button } from "@/components/ui/button"
@@ -115,10 +113,6 @@ const iconMap = {
 }
 
 export default function HomePage() {
-  return <ComingSoonPage />
-}
-
-function MarketplaceHomePage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [navbarSearchQuery, setNavbarSearchQuery] = useState("")
   const [showNavbarSearch, setShowNavbarSearch] = useState(false)
