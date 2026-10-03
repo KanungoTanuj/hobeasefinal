@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, RefreshCw } from "lucide-react"
 import Link from "next/link"
+import HobeaseLogo from "@/components/hobease-logo"
 import { supabase } from "@/lib/supabase"
 
 export default function AuthPage() {
@@ -202,12 +203,7 @@ export default function AuthPage() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Home
           </Link>
-          <Link href="/" className="block">
-            <h1 className="text-3xl font-bold font-serif">
-              <span className="text-[#FF6600]">Hob</span>
-              <span className="text-[#00B9D9]">ease</span>
-            </h1>
-          </Link>
+          <HobeaseLogo textClassName="text-3xl font-bold font-serif" />
           <p className="mt-2 text-gray-600 font-sans">Welcome back! Please sign in to your account</p>
         </div>
 
