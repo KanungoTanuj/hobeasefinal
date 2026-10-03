@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Star, Filter, MapPin, Loader2, Heart, Award, X } from "lucide-react"
 import BookingModal from "@/components/booking-modal"
 import ProfileSection from "@/components/profile-section"
+import HobeaseLogo from "@/components/hobease-logo"
 import { getInitialSession, supabase } from "@/lib/supabase"
 import Fuse from "fuse.js"
 
@@ -509,11 +510,7 @@ export default function MarketplacePage() {
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-5 sm:px-8 lg:px-10">
-          <Link href="/" className="cursor-pointer transition-opacity hover:opacity-80" aria-label="Hobease home">
-            <h1 className="text-[27px] font-bold tracking-tight">
-              <span className="text-[#FF6600]">Hob</span><span className="text-[#00B9D9]">ease</span>
-            </h1>
-          </Link>
+          <HobeaseLogo className="cursor-pointer transition-opacity hover:opacity-80" textClassName="text-[27px] font-bold tracking-tight" />
           <nav className="hidden items-center gap-8 md:flex">
             <a href="#" className="relative py-6 text-sm font-semibold text-[#ff6600] after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[#ff6600]">Browse Skills</a>
             <a href="#" className="py-6 text-sm font-medium text-slate-600 transition-colors hover:text-[#ff6600]">How it Works</a>

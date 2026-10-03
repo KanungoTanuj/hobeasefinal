@@ -26,6 +26,7 @@ import LanguageSelector from "@/components/language-selector"
 import { useTranslation } from "@/components/translation-provider"
 import TranslatedText from "@/components/translated-text"
 import HeroSpline from "@/components/hero-spline"
+import HobeaseLogo from "@/components/hobease-logo"
 
 const popularSkills = [
   {
@@ -307,12 +308,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center">
-              <Link href="/" className="hover:opacity-80 transition-opacity">
-                <h1 className="text-2xl font-bold font-serif cursor-pointer">
-                  <span className="text-[#FF6600]">Hob</span>
-                  <span className="text-[#00B9D9]">ease</span>
-                </h1>
-              </Link>
+              <HobeaseLogo className="hover:opacity-80 transition-opacity" textClassName="text-2xl font-bold font-serif cursor-pointer" />
             </div>
 
             {showNavbarSearch && (

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import HobeaseLogo from "@/components/hobease-logo"
 import {
   Home,
   BookOpen,
@@ -465,7 +466,7 @@ export default function LearnerDashboard() {
       <Tabs defaultValue="overview" className="min-h-screen">
         <div className="flex min-h-screen flex-col lg:flex-row">
           <aside className="w-full shrink-0 border-b border-slate-200 bg-white px-4 py-4 lg:min-h-screen lg:w-64 lg:border-b-0 lg:border-r lg:px-5 lg:py-7">
-            <div className="mb-7 flex items-center gap-3 px-2"><div className="flex size-10 items-center justify-center rounded-2xl bg-[#e2f7fb] text-lg font-black text-[#079ab6]">H</div><div><p className="text-lg font-black tracking-tight">hobease</p><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Learn together</p></div></div>
+            <div className="mb-7 flex items-center gap-3 px-2"><HobeaseLogo textClassName="text-lg font-bold tracking-tight" /><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Learn together</p></div>
             <TabsList className="flex h-auto w-full flex-row gap-1 overflow-x-auto bg-transparent p-0 lg:flex-col lg:items-stretch">
               <TabsTrigger value="overview" className="justify-start gap-3 rounded-xl px-3 py-3 text-slate-500 data-[state=active]:bg-[#e8f8fb] data-[state=active]:text-[#087e9b]"><TrendingUp /> Overview</TabsTrigger>
               <TabsTrigger value="bookings" className="justify-start gap-3 rounded-xl px-3 py-3 text-slate-500 data-[state=active]:bg-[#e8f8fb] data-[state=active]:text-[#087e9b]"><BookOpen /> My Tutors</TabsTrigger>
