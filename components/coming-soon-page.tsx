@@ -44,7 +44,7 @@ export default function ComingSoonPage() {
   return (
     <main className="min-h-screen overflow-hidden bg-[#fffaf5] text-[#192b35]">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-6 sm:px-8 lg:px-12">
-        <HobeaseLogo textClassName="text-[1.75rem] font-bold tracking-[-0.06em]" />
+        <HobeaseLogo textClassName="text-[1.75rem] font-bold font-serif tracking-[-0.06em]" />
         <div className="flex items-center gap-3">
           <Link href="/auth" className="hidden rounded-full px-4 py-2 text-sm font-semibold text-[#192b35] transition hover:bg-white sm:inline-flex">Log in</Link>
           <Button onClick={scrollToWaitlist} className="rounded-full bg-[#ff6600] px-5 font-semibold text-white shadow-[0_10px_24px_-12px_#ff6600] hover:bg-[#e85c00]">Join the waitlist</Button>

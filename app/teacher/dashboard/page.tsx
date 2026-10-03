@@ -496,7 +496,7 @@ export default function TeacherDashboard() {
       <div className="mx-auto flex max-w-[1500px] gap-6 px-4 py-4 sm:px-6 lg:px-8">
         <aside className="hidden w-60 shrink-0 flex-col rounded-[28px] border border-[#dcecf5] bg-white p-4 shadow-[0_16px_45px_rgba(16,42,67,0.06)] lg:flex">
           <div className="flex items-center gap-3 px-3 py-4">
-            <HobeaseLogo textClassName="text-lg font-bold tracking-tight" />
+            <HobeaseLogo textClassName="text-lg font-bold font-serif tracking-tight" />
             <p className="text-xs text-[#6d8295]">Teach with purpose</p>
           </div>
           <nav className="mt-8 flex flex-1 flex-col gap-2" aria-label="Teacher navigation">
