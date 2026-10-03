@@ -119,39 +119,18 @@ const fallbackTranslations: Record<Language, Record<string, string>> = {
   },
 }
 
-export async function translateText(text: string, targetLanguage: Language): Promise<string> {
-  // Return original text if target language is English
-  if (targetLanguage === "en") {
-    return text
-  }
+export function translateText(text: string, targetLanguage: Language): string {
+  if (targetLanguage === "en") return text
 
-  // Create cache key
   const cacheKey = `${text}_${targetLanguage}`
+  const cached = translationCache.get(cacheKey)
+  if (cached) return cached
 
-  // Check cache first
-  if (translationCache.has(cacheKey)) {
-    return translationCache.get(cacheKey)!
-  }
-
-  if (fallbackTranslations[targetLanguage][text]) {
-    const fallbackText = fallbackTranslations[targetLanguage][text]
-    translationCache.set(cacheKey, fallbackText)
-    return fallbackText
-  }
-
-  try {
-    const response = await fetch("/api/translate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, targetLanguage }),
-    })
-    const data = await response.json()
-    const translatedText = data.translatedText || text
-    translationCache.set(cacheKey, translatedText)
-    return translatedText
-  } catch {
-    return text
-  }
+  // Only complete, reviewed phrases are translated. Unknown strings stay in English
+  // rather than being sent through word-by-word or automatic DOM translation.
+  const translated = fallbackTranslations[targetLanguage][text] ?? text
+  translationCache.set(cacheKey, translated)
+  return translated
 }
 
 // Hook for using translations in components

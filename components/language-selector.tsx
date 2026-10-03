@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ChevronDown, Globe } from "lucide-react"
 import { languageNames, type Language } from "@/lib/translations"
-import { useState } from "react"
 
 interface LanguageSelectorProps {
   currentLanguage: Language
@@ -11,14 +10,12 @@ interface LanguageSelectorProps {
 }
 
 export default function LanguageSelector({ currentLanguage, onLanguageChange }: LanguageSelectorProps) {
-  const [languageText] = useState("Language")
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="text-gray-700 hover:text-[#FF6600] transition-colors font-sans">
           <Globe className="h-4 w-4 mr-2" />
-          {languageText}
+          <span translate="no">{languageNames[currentLanguage]}</span>
           <ChevronDown className="h-4 w-4 ml-2" />
         </Button>
       </DropdownMenuTrigger>
