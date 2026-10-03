@@ -51,23 +51,28 @@ export default function TeacherProfilePage() {
       }
 
       setUser(session.user)
-      await fetchTeacherData(session.user.email!)
+      await fetchTeacherData(session.user.email!, session.user.id)
     }
 
     checkAuth()
   }, [router])
 
-  const fetchTeacherData = async (email: string) => {
+  const fetchTeacherData = async (email: string, authId: string) => {
     try {
       setLoading(true)
       const supabase = createClientComponentClient()
 
-      const { data: teacherData, error: teacherError } = await supabase
+      const columns = "id, name, email, bio, experience, photo_url"
+      const { data: byAuthId, error: authError } = await supabase
         .from("Teachers")
-        .select("id, name, email, bio, experience, photo_url")
-        .eq("email", email)
-        .limit(1)
-        .single()
+        .select(columns)
+        .eq("auth_id", authId)
+        .maybeSingle()
+      const { data: byEmail, error: emailError } = byAuthId
+        ? { data: null, error: null }
+        : await supabase.from("Teachers").select(columns).eq("email", email).maybeSingle()
+      const teacherData = byAuthId ?? byEmail
+      const teacherError = teacherData ? null : authError ?? emailError
 
       if (teacherError) {
         console.error("Error fetching teacher:", teacherError)
@@ -97,21 +102,13 @@ export default function TeacherProfilePage() {
   }
 
   const handleSave = async () => {
-    if (!user?.email) return
+    if (!user?.id || !teacher?.id) return
 
     try {
       setSaving(true)
       const supabase = createClientComponentClient()
 
-      console.log("[v0] Saving teacher profile with email:", user.email)
-      console.log("[v0] Update data:", {
-        name: formData.name,
-        bio: formData.bio,
-        experience: formData.experience,
-        photo_url: formData.photo_url,
-      })
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("Teachers")
         .update({
           name: formData.name,
@@ -119,10 +116,8 @@ export default function TeacherProfilePage() {
           experience: formData.experience,
           photo_url: formData.photo_url,
         })
-        .eq("email", user.email)
-        .select()
-
-      console.log("[v0] Update response - error:", error, "data:", data)
+        .eq("id", teacher.id)
+        .eq("auth_id", user.id)
 
       if (error) throw error
 

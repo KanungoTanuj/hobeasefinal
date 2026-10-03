@@ -26,6 +26,7 @@ import LanguageSelector from "@/components/language-selector"
 import { useTranslation } from "@/components/translation-provider"
 import TranslatedText from "@/components/translated-text"
 import HeroSpline from "@/components/hero-spline"
+import HobeaseLogo from "@/components/hobease-logo"
 
 const popularSkills = [
   {
@@ -307,12 +308,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center">
-              <Link href="/" className="hover:opacity-80 transition-opacity">
-                <h1 className="text-2xl font-bold font-serif cursor-pointer">
-                  <span className="text-[#FF6600]">Hob</span>
-                  <span className="text-[#00B9D9]">ease</span>
-                </h1>
-              </Link>
+              <HobeaseLogo className="hover:opacity-80 transition-opacity" textClassName="text-2xl font-bold font-serif cursor-pointer" />
             </div>
 
             {showNavbarSearch && (
@@ -456,31 +452,9 @@ export default function HomePage() {
         <div className="container mx-auto px-8 sm:px-12 lg:px-16 py-20 lg:py-32 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-8 leading-tight font-serif animate-slideInFromBottom">
-              <span className="inline-block animate-slideInFromLeft mr-4" style={{ animationDelay: "200ms" }}>
-                <TranslatedText text="Master" as="span" />
-              </span>
-              <span className="inline-block animate-slideInFromLeft mr-4" style={{ animationDelay: "300ms" }}>
-                <TranslatedText text="any" as="span" />
-              </span>
-              <span
-                className="text-[#FFE1CB] inline-block animate-slideInFromRight transform hover:scale-110 hover:rotate-2 transition-all duration-500 mr-2"
-                style={{ animationDelay: "400ms" }}
-              >
-                <TranslatedText text="Skill," as="span" />
-              </span>
+              <TranslatedText text="Master any Skill," as="span" />
               <br />
-              <span className="inline-block animate-slideInFromLeft mr-4" style={{ animationDelay: "600ms" }}>
-                <TranslatedText text="Just" as="span" />
-              </span>
-              <span
-                className="text-[#FFE1CB] inline-block animate-slideInFromRight transform hover:scale-125 hover:-rotate-3 transition-all duration-500 mr-4"
-                style={{ animationDelay: "800ms" }}
-              >
-                <TranslatedText text="100" as="span" />
-              </span>
-              <span className="inline-block animate-slideInFromBottom" style={{ animationDelay: "1000ms" }}>
-                <TranslatedText text="Rupees!" as="span" />
-              </span>
+              <TranslatedText text="Just 100 Rupees!" as="span" />
             </h1>
 
             <div className="flex justify-center animate-slideInFromBottom" style={{ animationDelay: "1200ms" }}>
