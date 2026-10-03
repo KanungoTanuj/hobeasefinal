@@ -93,6 +93,7 @@ export default function TeacherDashboard() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("overview")
   const [isAddSkillOpen, setIsAddSkillOpen] = useState(false)
+  const [editingSkillId, setEditingSkillId] = useState<string | null>(null)
   const [newSkill, setNewSkill] = useState({
     skill_name: "",
     skill_category: "",
@@ -301,20 +302,22 @@ export default function TeacherDashboard() {
     try {
       const supabase = createClientComponentClient()
 
-      const { data, error } = await supabase
-        .from("teacher_skills")
-        .insert({
-          teacher_id: teacher.id,
-          skill_name: newSkill.skill_name,
-          skill_category: newSkill.skill_category,
-          proficiency_level: newSkill.proficiency_level,
-          years_experience: newSkill.years_experience,
-          price_per_hour: newSkill.price_per_hour,
-          description: newSkill.description || null,
-          is_primary: skills.length === 0,
-        })
-        .select()
-        .single()
+      if (!Number.isInteger(Number(newSkill.price_per_hour)) || newSkill.price_per_hour < 100 || newSkill.price_per_hour > 10000) {
+        alert("Price must be between ₹100 and ₹10,000 per hour.")
+        return
+      }
+      const values = {
+        skill_name: newSkill.skill_name.trim(),
+        skill_category: newSkill.skill_category.trim(),
+        proficiency_level: newSkill.proficiency_level,
+        years_experience: Number(newSkill.years_experience),
+        price_per_hour: Number(newSkill.price_per_hour),
+        description: newSkill.description.trim() || null,
+      }
+      const query = editingSkillId
+        ? supabase.from("teacher_skills").update(values).eq("id", editingSkillId).eq("teacher_id", teacher.id).select().single()
+        : supabase.from("teacher_skills").insert({ ...values, teacher_id: teacher.id, is_primary: skills.length === 0 }).select().single()
+      const { data, error } = await query
 
       if (error) {
         console.error("Error adding skill:", error)
@@ -322,8 +325,9 @@ export default function TeacherDashboard() {
         return
       }
 
-      setSkills([...skills, data])
+      setSkills(editingSkillId ? skills.map((skill) => skill.id === editingSkillId ? data : skill) : [...skills, data])
       setIsAddSkillOpen(false)
+      setEditingSkillId(null)
       setNewSkill({
         skill_name: "",
         skill_category: "",
@@ -332,7 +336,7 @@ export default function TeacherDashboard() {
         price_per_hour: 1000,
         description: "",
       })
-      alert("Skill added successfully!")
+      alert(editingSkillId ? "Skill updated successfully!" : "Skill added successfully!")
     } catch (error) {
       console.error("Error adding skill:", error)
       alert("Failed to add skill. Please try again.")
@@ -589,8 +593,8 @@ export default function TeacherDashboard() {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px] mx-4 sm:mx-0">
                   <DialogHeader>
-                    <DialogTitle>Add New Skill</DialogTitle>
-                    <DialogDescription>Add a new skill to your teaching profile</DialogDescription>
+  <DialogTitle>{editingSkillId ? "Edit Skill" : "Add New Skill"}</DialogTitle>
+  <DialogDescription>{editingSkillId ? "Update this skill on your teaching profile" : "Add a new skill to your teaching profile"}</DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
@@ -682,8 +686,8 @@ export default function TeacherDashboard() {
                       Cancel
                     </Button>
                     <Button type="button" onClick={handleAddSkill}>
-                      Add Skill
-                    </Button>
+  {editingSkillId ? "Save Changes" : "Add Skill"}
+  </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -734,7 +738,11 @@ export default function TeacherDashboard() {
                       </div>
                       {skill.description && <p className="text-sm text-gray-600 line-clamp-2">{skill.description}</p>}
                       <div className="flex gap-2 pt-2">
-                        <Button size="sm" variant="outline" className="flex-1 bg-transparent text-xs sm:text-sm">
+                        <Button size="sm" variant="outline" className="flex-1 bg-transparent text-xs sm:text-sm" onClick={() => {
+                          setEditingSkillId(skill.id)
+                          setNewSkill({ skill_name: skill.skill_name, skill_category: skill.skill_category, proficiency_level: skill.proficiency_level, years_experience: skill.years_experience, price_per_hour: skill.price_per_hour, description: skill.description || "" })
+                          setIsAddSkillOpen(true)
+                        }}>
                           <Edit className="h-3 w-3 mr-1" />
                           Edit
                         </Button>

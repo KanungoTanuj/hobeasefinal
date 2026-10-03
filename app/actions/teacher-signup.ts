@@ -15,11 +15,12 @@ export async function submitTeacherApplication(formData: FormData) {
     const price_hour = formData.get("price_hour") as string
     const category = formData.get("category") as string
 
+    const parsedPrice = Number(price_hour)
     if (!name || !email || !skill || !experience || !price_hour || !category) {
-      return {
-        success: false,
-        error: "Please fill in all required fields.",
-      }
+      return { success: false, error: "Please fill in all required fields." }
+    }
+    if (!Number.isInteger(parsedPrice) || parsedPrice < 100 || parsedPrice > 10000) {
+      return { success: false, error: "Private-session pricing must be between ₹100 and ₹10,000 per hour." }
     }
 
     let photoUrl = null

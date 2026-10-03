@@ -233,7 +233,7 @@ export default function TeacherSignupPage() {
                     className="h-11"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Set your hourly teaching rate (minimum ₹100, maximum ₹10,000)
+                    Private sessions start at ₹100/hour and can be priced up to ₹10,000/hour. Optional group sessions are priced per participant.
                   </p>
                 </div>
 
