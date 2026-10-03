@@ -19,8 +19,8 @@ const montserrat = Montserrat({
 })
 
 export const metadata: Metadata = {
-  title: "Hobease - Learn Skills, Teach Skills",
-  description: "A modern skill-learning marketplace connecting learners with expert teachers",
+  title: "Hobease — Learn what you love",
+  description: "Hobease connects curious people with people who love to teach. Join the waitlist for affordable one-to-one and group learning.",
   generator: "v0.app",
 }
 
