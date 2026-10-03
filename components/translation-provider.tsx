@@ -58,7 +58,7 @@ export function TranslationProvider({ children }: { children: React.ReactNode })
     >
       {children}
       {pathname !== "/" && (
-        <div className="fixed right-4 top-4 z-50 rounded-md bg-background/95 shadow-sm backdrop-blur" translate="no">
+        <div className="fixed bottom-4 right-4 z-50 rounded-md bg-background/95 shadow-sm backdrop-blur" translate="no">
           <LanguageSelector currentLanguage={currentLanguage} onLanguageChange={setLanguage} />
         </div>
       )}

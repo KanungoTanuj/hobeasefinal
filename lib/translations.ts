@@ -6,6 +6,8 @@ const translationCache = new Map<string, string>()
 const fallbackTranslations: Record<Language, Record<string, string>> = {
   en: {},
   hi: {
+    "Master any Skill,": "किसी भी कौशल में महारत हासिल करें,",
+    "Just 100 Rupees!": "सिर्फ 100 रुपये!",
     "Master any Skill": "कोई भी कौशल सीखें",
     "Start Learning Today": "आज ही सीखना शुरू करें",
     Language: "भाषा",
@@ -34,6 +36,8 @@ const fallbackTranslations: Record<Language, Record<string, string>> = {
     "Join as Teacher": "शिक्षक के रूप में जुड़ें",
   },
   es: {
+    "Master any Skill,": "Domina cualquier habilidad,",
+    "Just 100 Rupees!": "¡Solo 100 rupias!",
     "Master any Skill": "Domina cualquier habilidad",
     "Start Learning Today": "Comienza a aprender hoy",
     Language: "Idioma",
@@ -62,6 +66,8 @@ const fallbackTranslations: Record<Language, Record<string, string>> = {
     "Join as Teacher": "Únete como profesor",
   },
   de: {
+    "Master any Skill,": "Jede Fähigkeit meistern,",
+    "Just 100 Rupees!": "Nur 100 Rupien!",
     "Master any Skill": "Jede Fähigkeit meistern",
     "Start Learning Today": "Heute mit dem Lernen beginnen",
     Language: "Sprache",
@@ -90,6 +96,8 @@ const fallbackTranslations: Record<Language, Record<string, string>> = {
     "Join as Teacher": "Als Lehrer beitreten",
   },
   fr: {
+    "Master any Skill,": "Maîtrisez n'importe quelle compétence,",
+    "Just 100 Rupees!": "Seulement 100 roupies !",
     "Master any Skill": "Maîtrisez n'importe quelle compétence",
     "Start Learning Today": "Commencez à apprendre aujourd'hui",
     Language: "Langue",
