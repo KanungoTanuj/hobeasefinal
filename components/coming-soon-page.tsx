@@ -31,13 +31,13 @@ export default function ComingSoonPage() {
     setMessage("")
     try {
       const response = await fetch("/api/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) })
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error || "Please try again.")
+      const data = (await response.json().catch(() => ({}))) as { error?: string; message?: string }
+      if (!response.ok) throw new Error(data.error || data.message || "Please try again.")
       setStatus("success")
-      setMessage(data.message)
+      setMessage(data.message || "You’re on the list.")
     } catch (error) {
       setStatus("error")
-      setMessage(error instanceof Error ? error.message : "Something went wrong. Please try again.")
+      setMessage(error instanceof Error ? error.message : "Please try again.")
     }
   }
 

@@ -2,10 +2,10 @@ import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { z } from "zod"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
 function createWaitlistAdminClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
   if (!supabaseUrl || !supabaseServiceRoleKey) {
     throw new Error("Waitlist Supabase admin credentials are not configured")
   }
@@ -39,12 +39,19 @@ export async function POST(request: Request) {
       interest: parsed.data.interest,
     })
 
-    const duplicateErrorText = [error?.message, error?.details, error?.hint].filter(Boolean).join(" ")
-    if (error?.code === "23505" && /email/i.test(duplicateErrorText)) {
-      return NextResponse.json({ status: "already_registered", message: "You’re already on the list. We’ll be in touch when Hobease is ready." })
-    }
     if (error) {
-      console.error("[v0] Waitlist insert failed:", error)
+      console.error("[v0] Waitlist insert failed:", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      })
+
+      const duplicateErrorText = [error.message, error.details, error.hint].filter(Boolean).join(" ")
+      if (error.code === "23505" && /email/i.test(duplicateErrorText)) {
+        return NextResponse.json({ status: "already_registered", message: "You’re already on the list. We’ll be in touch when Hobease is ready." })
+      }
+
       return NextResponse.json({ error: "We couldn’t save your spot right now. Please try again." }, { status: 500 })
     }
 
