@@ -15,9 +15,16 @@ export async function POST(req: NextRequest) {
 
     const payload = `${orderId}|${paymentId}`
     const expected = crypto.createHmac("sha256", keySecret).update(payload).digest("hex")
-    const valid = expected === signature
+    const expectedBuffer = Buffer.from(expected, "hex")
+    const receivedBuffer = Buffer.from(signature, "hex")
+    const valid =
+      expectedBuffer.length === receivedBuffer.length && crypto.timingSafeEqual(expectedBuffer, receivedBuffer)
 
-    return NextResponse.json({ valid })
+    if (!valid) {
+      return NextResponse.json({ error: "Invalid payment signature", valid: false }, { status: 400 })
+    }
+
+    return NextResponse.json({ valid: true })
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "Server error" }, { status: 500 })
   }

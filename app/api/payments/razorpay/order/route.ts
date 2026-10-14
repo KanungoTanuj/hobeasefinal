@@ -11,8 +11,8 @@ export async function POST(req: NextRequest) {
     if (!keyId || !keySecret) {
       return NextResponse.json({ error: "Missing Razorpay credentials" }, { status: 500 })
     }
-    if (!amount || amount <= 0) {
-      return NextResponse.json({ error: "Invalid amount" }, { status: 400 })
+    if (!Number.isInteger(amount) || amount < 100) {
+      return NextResponse.json({ error: "Amount must be at least 100 paise" }, { status: 400 })
     }
 
     const basic = Buffer.from(`${keyId}:${keySecret}`).toString("base64")
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: json?.error || json }, { status: res.status })
     }
 
-    return NextResponse.json({ orderId: json.id, keyId })
+    return NextResponse.json({ order_id: json.id, keyId, amount: json.amount, currency: json.currency })
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "Server error" }, { status: 500 })
   }

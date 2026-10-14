@@ -365,8 +365,9 @@ export default function BookingModal({ isOpen, onClose, skill }: BookingModalPro
     learnerAuthId: string
     learnerId: string
     teacherId: string
+    payment: { orderId: string; paymentId: string; signature: string }
   }) => {
-    const { groupBookingId, teacherAuthId, learnerAuthId, learnerId, teacherId } = params
+    const { groupBookingId, teacherAuthId, learnerAuthId, learnerId, teacherId, payment } = params
     const finalName =
       user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || learnerName
     const finalEmail = user?.email || learnerEmail
@@ -388,6 +389,10 @@ export default function BookingModal({ isOpen, onClose, skill }: BookingModalPro
       max_participants: 1,
       current_participants: 1,
       is_group_leader: true,
+      razorpay_order_id: payment.orderId,
+      razorpay_payment_id: payment.paymentId,
+      razorpay_signature: payment.signature,
+      payment_status: "paid",
     }
 
     console.log("[v0] Creating booking payload:", { ...bookingData, learner_email: "[redacted]" })
@@ -430,12 +435,12 @@ export default function BookingModal({ isOpen, onClose, skill }: BookingModalPro
       const msg = await orderRes.text()
       throw new Error(`Order creation failed: ${msg}`)
     }
-    const { orderId, keyId } = await orderRes.json()
+    const { order_id: orderId, keyId, amount, currency } = await orderRes.json()
 
     const options = {
       key: keyId,
-      amount: Math.round(skill.pricePerHour * 100),
-      currency: "INR",
+      amount,
+      currency,
       name: "Booking Payment",
       description: `${skill.skillName} with ${skill.teacherName}`,
       order_id: orderId,
@@ -471,6 +476,11 @@ export default function BookingModal({ isOpen, onClose, skill }: BookingModalPro
             learnerAuthId: args.learnerAuthId,
             learnerId: args.learnerId,
             teacherId: args.teacherId,
+            payment: {
+              orderId: response.razorpay_order_id,
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
+            },
           })
           setShowSuccess(true)
         } catch (err) {
@@ -482,7 +492,6 @@ export default function BookingModal({ isOpen, onClose, skill }: BookingModalPro
       },
       modal: {
         ondismiss: () => {
-          console.log("[v0] Razorpay modal dismissed")
           setIsLoading(false)
         },
       },
@@ -591,18 +600,8 @@ export default function BookingModal({ isOpen, onClose, skill }: BookingModalPro
         teacherId,
         groupBookingId,
       })
-      // startRazorpayPayment will set loading=false internally
+      // startRazorpayPayment manages loading state after the payment result.
       return
-
-      // Fallback: create booking directly without payment
-      await createBooking({
-        groupBookingId,
-        teacherAuthId,
-        learnerAuthId,
-        learnerId,
-        teacherId,
-      })
-      setShowSuccess(true)
     } catch (error) {
       console.error("[v0] Booking failed:", error)
       const errorMessage = error instanceof Error ? error.message : "An error occurred. Please try again."
